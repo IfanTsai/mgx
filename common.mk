@@ -11,7 +11,6 @@ OBJCOPY     = $(CROSS_COMPILE)objcopy
 OBJDUMP     = $(CROSS_COMPILE)objdump
 
 CFLAGS := -Wall -O2 -std=c++11
-CFLAGS += -I $(shell pwd)/include
 
 LDFLAGS := -lpthread
 
@@ -55,4 +54,4 @@ $(LINK_OBJ_DIR)/%.o: %.cpp
 
 $(DEP_DIR)/%.d: %.cpp
 	echo -n $(LINK_OBJ_DIR)/ > $@
-	$(CC) -I$(INCLUDE_PATH) -MM $^ >> $@
+	$(CC) $(CFLAGS) -I$(INCLUDE_PATH) -MM $^ >> $@
