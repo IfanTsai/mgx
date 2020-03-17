@@ -38,38 +38,35 @@ void Mgx_socket::delete_from_timer_queue(pmgx_conn_t pconn)
 void Mgx_socket::heart_timer_init()
 {
     /* thread used to monitor timer queue */
-    Thread_item *pth_item = new Thread_item(this);
-    int err = pthread_create(&pth_item->tid, nullptr, monitor_timer_th_func, pth_item);
+    m_monitor_timer_thread = new Mgx_thread(std::bind(&Mgx_socket::monitor_timer_th_func, this));
+    int err = m_monitor_timer_thread->start();
     if (err != 0) {
-        mgx_log(MGX_LOG_STDERR, "pthread_create recy thread error: %s", strerror(err));
+        mgx_log(MGX_LOG_STDERR, "heart timer thread create error: %s", strerror(err));
         exit(1);
     }
 }
 
-void *Mgx_socket::monitor_timer_th_func(void *arg)
+void Mgx_socket::monitor_timer_th_func()
 {
-    Thread_item *th_item = static_cast<Thread_item *>(arg);
-    Mgx_socket *pthis = th_item->pthis;
-
     time_t cur_time, timer_que_head_time;
     int err;
 
     while (1) {
-        if (pthis->m_timer_que_size > 0) {
-            timer_que_head_time = pthis->m_timer_que_head_time;
+        if (m_timer_que_size > 0) {
+            timer_que_head_time = m_timer_que_head_time;
             cur_time = time(nullptr);
             if (cur_time > timer_que_head_time) {
                 std::queue<pmgx_msg_hdr_t> que;
                 pmgx_msg_hdr_t pmsg_hdr;
 
-                err = pthread_mutex_lock(&pthis->m_timer_que_mutex);
+                err = pthread_mutex_lock(&m_timer_que_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
                 
-                while ((pmsg_hdr = pthis->get_over_time_timer(cur_time)))
+                while ((pmsg_hdr = get_over_time_timer(cur_time)))
                     que.push(pmsg_hdr);
 
-                err = pthread_mutex_unlock(&pthis->m_timer_que_mutex);
+                err = pthread_mutex_unlock(&m_timer_que_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_unlock error: %s", strerror(err));
                 
@@ -78,12 +75,12 @@ void *Mgx_socket::monitor_timer_th_func(void *arg)
                     que.pop();
                     if (pmsg_hdr->cur_seq == pmsg_hdr->pconn->m_cur_seq) {
                         mgx_log(MGX_LOG_DEBUG, "time_duration: %d, wait_time: %d", 
-                            cur_time - pmsg_hdr->pconn->last_ping_time,  pthis->m_heart_wait_time );
-                        if (cur_time - pmsg_hdr->pconn->last_ping_time > pthis->m_heart_wait_time * 3) {
+                            cur_time - pmsg_hdr->pconn->last_ping_time,  m_heart_wait_time );
+                        if (cur_time - pmsg_hdr->pconn->last_ping_time > m_heart_wait_time * 3) {
                             mgx_log(MGX_LOG_DEBUG, "no heartbeat packet received after timeout");
-                            pthis->insert_recy_conn_queue(pmsg_hdr->pconn);
+                            insert_recy_conn_queue(pmsg_hdr->pconn);
                             /* insert_recy_conn_queue has done */
-                            //pthis->m_timer_que_size--;
+                            //m_timer_que_size--;
                         }
                     }
                     delete[] pmsg_hdr;
@@ -92,8 +89,6 @@ void *Mgx_socket::monitor_timer_th_func(void *arg)
         }
         usleep(200 * 1000);
     }
-
-    return (void *)0;
 }
 
 pmgx_msg_hdr_t Mgx_socket::get_over_time_timer(time_t cur_time)

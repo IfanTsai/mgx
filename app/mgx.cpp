@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
     g_argv = argv;
     g_pid = getpid();
 
-    Mgx_crc32::get_instance();
     Mgx_conf *mgx_conf = Mgx_conf::get_instance();
     if (!mgx_conf->load("./mgx.conf")) {
         mgx_log_stderr("load config failed !!!");
