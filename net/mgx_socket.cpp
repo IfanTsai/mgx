@@ -31,8 +31,17 @@ Mgx_socket::~Mgx_socket()
         delete *it;
 
     m_listen_skts.clear();
+    pthread_mutex_destroy(&m_timer_que_mutex);
+    pthread_mutex_destroy(&m_send_queue_mutex);
     pthread_mutex_destroy(&m_recy_queue_mutex);
     pthread_mutex_destroy(&m_conn_mutex);
+
+    if (m_send_thread) {
+        m_send_thread->join();
+        delete m_send_thread;
+    }
+
+    conn_pool_destroy();
 
 #if 0
     while (!m_msg_queue.empty()) {
@@ -145,10 +154,10 @@ void Mgx_socket::send_msg_th_init()
     }
 
     /* thread used to process send message queue */
-    Thread_item *pth_item = new Thread_item(this);
-    int err = pthread_create(&pth_item->tid, nullptr, send_msg_th_func, pth_item);
+    m_send_thread = new Mgx_thread(std::bind(&Mgx_socket::send_msg_th_func, this));
+    int err = m_send_thread->start();
     if (err != 0) {
-        mgx_log(MGX_LOG_STDERR, "pthread_create send thread error: %s", strerror(err));
+        mgx_log(MGX_LOG_STDERR, "send thread create error: %s", strerror(err));
         exit(1);
     }
 }
@@ -282,32 +291,29 @@ void Mgx_socket::send_msg(char *send_buf)
     sem_post(&m_send_queue_sem);
 }
 
-void *Mgx_socket::send_msg_th_func(void *arg)
+void Mgx_socket::send_msg_th_func()
 {
-    Thread_item *th_item = static_cast<Thread_item *>(arg);
-    Mgx_socket *pthis = th_item->pthis;
-
     int err;
     pmgx_msg_hdr_t pmsg_hdr = nullptr;
     pmgx_pkg_hdr_t ppkg_hdr = nullptr;
     pmgx_conn_t pconn;
 
-    while (1) {
-        sem_wait(&pthis->m_send_queue_sem);
-        if (pthis->m_send_list_cnt > 0) {
-            auto it = pthis->m_send_list.begin();
-            while (it != pthis->m_send_list.end()) {
-                err = pthread_mutex_lock(&pthis->m_send_queue_mutex);
+    for (;;) {
+        sem_wait(&m_send_queue_sem);
+        if (m_send_list_cnt > 0) {
+            auto it = m_send_list.begin();
+            while (it != m_send_list.end()) {
+                err = pthread_mutex_lock(&m_send_queue_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
 
                 pmsg_hdr = (pmgx_msg_hdr_t)(*it);
-                ppkg_hdr = (pmgx_pkg_hdr_t)(*it + pthis->m_msg_hdr_size);
+                ppkg_hdr = (pmgx_pkg_hdr_t)(*it + m_msg_hdr_size);
                 pconn = pmsg_hdr->pconn;
 
                 if (pconn->m_cur_seq != pmsg_hdr->cur_seq) {
-                    pthis->m_send_list_cnt--;
-                    it = pthis->m_send_list.erase(it);     /* erase can it = it + 1 */
+                    m_send_list_cnt--;
+                    it = m_send_list.erase(it);     /* erase can it = it + 1 */
                     delete[] (*it);
                     continue;
                 }
@@ -317,16 +323,16 @@ void *Mgx_socket::send_msg_th_func(void *arg)
                     continue;
                 }
 
-                pconn->psend_buf = (*it) + pthis->m_msg_hdr_size;
+                pconn->psend_buf = (*it) + m_msg_hdr_size;
                 pconn->rest_send_size = ppkg_hdr->pkg_size;
 
                 mgx_log(MGX_LOG_DEBUG, "start to send %d data", pconn->rest_send_size);
 
                 pconn->psend_mem_addr = *it;
-                it = pthis->m_send_list.erase(it);     /* erase can it = it + 1 */
-                pthis->m_send_list_cnt--;
+                it = m_send_list.erase(it);     /* erase can it = it + 1 */
+                m_send_list_cnt--;
 
-                ssize_t send_size = pthis->send_uninterrupt(pconn, pconn->psend_buf, pconn->rest_send_size);
+                ssize_t send_size = send_uninterrupt(pconn, pconn->psend_buf, pconn->rest_send_size);
 
                 if (send_size > 0) {
                     if (send_size == pconn->rest_send_size) {
@@ -340,7 +346,7 @@ void *Mgx_socket::send_msg_th_func(void *arg)
                         pconn->psend_buf += send_size;
                         pconn->rest_send_size -= send_size;
                         pconn->throw_send_cnt++;
-                        if (!pthis->epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
+                        if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
                             mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
                         }
                     }
@@ -348,7 +354,7 @@ void *Mgx_socket::send_msg_th_func(void *arg)
                     pconn->throw_send_cnt = 0;
                 } else if (send_size == -1) {
                     pconn->throw_send_cnt++;
-                    if (!pthis->epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
+                    if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
                         mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
                     }
                 } else {
@@ -357,7 +363,7 @@ void *Mgx_socket::send_msg_th_func(void *arg)
                     pconn->psend_mem_addr = nullptr;
                 }
 
-                err = pthread_mutex_unlock(&pthis->m_send_queue_mutex);
+                err = pthread_mutex_unlock(&m_send_queue_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_unlock error: %s", strerror(err));
 

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <cstring>
 #include "mgx_comm.h"
+#include "mgx_thread.h"
 
 #define DEFAULT_LISTEN_PORT  100000
 #define DEFAULT_WORKER_CONNS 1024
@@ -74,16 +75,6 @@ typedef struct {
 
 class Mgx_socket
 {
-private:
-    struct Thread_item
-    {
-        Thread_item(Mgx_socket *pthis): pthis(pthis) {}
-        ~Thread_item() {}
-
-        pthread_t tid;
-        Mgx_socket *pthis;
-    };
-
 public:
     Mgx_socket();
     virtual ~Mgx_socket();
@@ -96,7 +87,7 @@ public:
     void epoll_init();
     bool epoll_process_events(int timeout);
     bool epoll_oper_event(int fd, uint32_t e_type, uint32_t flag, int add_or_del_es, pmgx_conn_t pconn);
-    
+
 protected:
     void send_msg(char *send_buf);
     /* mgx_socket_conn.cpp */
@@ -119,12 +110,14 @@ private:
     int m_recy_conn_wait_time = DEFAULT_RECY_CONN_WAIT_TIME;
     pthread_mutex_t m_conn_mutex;
     pthread_mutex_t m_recy_queue_mutex;
+    Mgx_thread *m_recy_thread;
 
     /* send */
     std::list<char *> m_send_list;
     std::atomic<int> m_send_list_cnt;
     sem_t m_send_queue_sem;
     pthread_mutex_t m_send_queue_mutex;
+    Mgx_thread *m_send_thread;
 
     /* heartbeat */
     int m_enabled_heartbeat;
@@ -133,22 +126,23 @@ private:
     pthread_mutex_t m_timer_que_mutex;
     std::atomic<int> m_timer_que_size;
     time_t  m_timer_que_head_time;
+    Mgx_thread *m_monitor_timer_thread;
 
     void read_conf();
     bool open_listen_skts();
     void close_listen_skts();
     void set_nonblock(int listenfd);
     void send_msg_th_init();
-    static void *send_msg_th_func(void *arg);
+    void send_msg_th_func();
     ssize_t send_uninterrupt(pmgx_conn_t c, char *buf, ssize_t size);
 
     /* mgx_socket_conn.cpp */
     void conn_pool_init();
-    void clear_conn_pool();
+    void conn_pool_destroy();
     pmgx_conn_t get_conn(int sock_fd);
     void free_conn(pmgx_conn_t c);
     void close_conn(pmgx_conn_t c);
-    static void *recy_conn_th_func(void *arg);
+    void recy_conn_th_func();
 
     /* mgx_socket_accept.cpp */
     void event_accept(pmgx_conn_t pconn_listen);
@@ -166,7 +160,7 @@ private:
     void add_to_timer_queue(pmgx_conn_t pconn);
     time_t get_earliest_time();
     pmgx_msg_hdr_t get_over_time_timer(time_t cur_time);
-    static void *monitor_timer_th_func(void *arg);
+    void monitor_timer_th_func();
     void delete_from_timer_queue(pmgx_conn_t pconn);
 };
 

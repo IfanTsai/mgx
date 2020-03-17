@@ -47,10 +47,10 @@ void Mgx_socket::conn_pool_init()
     m_free_conns_cnt = m_total_conns_cnt = m_worker_conns;
 
     /* thread used to delayed recovery connections */
-    Thread_item *pth_item = new Thread_item(this);
-    int err = pthread_create(&pth_item->tid, nullptr, recy_conn_th_func, pth_item);
+    m_recy_thread = new Mgx_thread(std::bind(&Mgx_socket::recy_conn_th_func, this));
+    int err = m_recy_thread->start();
     if (err != 0) {
-        mgx_log(MGX_LOG_STDERR, "pthread_create recy thread error: %s", strerror(err));
+        mgx_log(MGX_LOG_STDERR, "recy thread start error: %s", strerror(err));
         exit(1);
     }
 }
@@ -80,12 +80,22 @@ pmgx_conn_t Mgx_socket::get_conn(int sock_fd)
     return pconn;
 }
 
-void Mgx_socket::clear_conn_pool()
+void Mgx_socket::conn_pool_destroy()
 {
+    pmgx_conn_t pconn;
+
     while (!m_pconns_queue.empty()) {
-        pmgx_conn_t pconn = m_pconns_queue.front();
+        pconn = m_pconns_queue.front();
         m_pconns_queue.pop();
         delete pconn;
+    }
+
+    while (!m_pconns_free_queue.empty())
+        m_pconns_free_queue.pop();
+
+    if (m_recy_thread) {
+        m_recy_thread->join();
+        delete m_recy_thread;
     }
 }
 
@@ -130,39 +140,34 @@ void Mgx_socket::close_conn(pmgx_conn_t c)
     free_conn(c);
 }
 
-void *Mgx_socket::recy_conn_th_func(void *arg)
+void Mgx_socket::recy_conn_th_func()
 {
-    Thread_item *th_item = static_cast<Thread_item *>(arg);
-    Mgx_socket *pthis = th_item->pthis;
-
     time_t cur_time;
     int err;
     pmgx_conn_t pconn;
 
-    while (1) {
+    for (;;) {
         usleep(200 * 1000);
-        if (pthis->m_total_recy_conns_cnt > 0) {
-            auto it = pthis->m_recy_conn_set.begin();
-            while (it != pthis->m_recy_conn_set.end()) {
+        if (m_total_recy_conns_cnt > 0) {
+            auto it = m_recy_conn_set.begin();
+            while (it != m_recy_conn_set.end()) {
                 cur_time = time(nullptr);
                 pconn = *it;
-                if (cur_time >= pconn->in_recy_time + pthis->m_recy_conn_wait_time) {
-                    err = pthread_mutex_lock(&pthis->m_recy_queue_mutex);
+                if (cur_time >= pconn->in_recy_time + m_recy_conn_wait_time) {
+                    err = pthread_mutex_lock(&m_recy_queue_mutex);
                     if (err != 0)
                         mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
 
-                    pthis->m_total_recy_conns_cnt--;
-                    it = pthis->m_recy_conn_set.erase(it);     /* erase can it = it + 1 */
+                    m_total_recy_conns_cnt--;
+                    it = m_recy_conn_set.erase(it);     /* erase can it = it + 1 */
                     mgx_log(MGX_LOG_DEBUG, "recy a connection, fd: %d", pconn->fd);
-                    pthis->free_conn(pconn);
+                    free_conn(pconn);
 
-                    err = pthread_mutex_unlock(&pthis->m_recy_queue_mutex);
+                    err = pthread_mutex_unlock(&m_recy_queue_mutex);
                     if (err != 0)
                         mgx_log(MGX_LOG_STDERR, "pthread_mutex_unlock error: %s", strerror(err));
                 }
             }
         }
     }
-
-    return (void *)0;
 }
