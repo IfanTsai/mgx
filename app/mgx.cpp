@@ -32,10 +32,6 @@ int main(int argc, char *argv[])
 
     mgx_log_init();
     mgx_signal_init();
-    if (!g_mgx_socket.init()) {
-        mgx_log(MGX_LOG_STDERR, "socket init failed");
-        exit(1);
-    }
 
     if (mgx_conf->get_int(CONFIG_Daemon, 0)) {
         int res = mgx_daemon();

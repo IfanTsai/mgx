@@ -41,6 +41,11 @@ static inline void mgx_worker_process_init(int worker_nr)
 
 static void mgx_worker_process_cycle(int worker_nr, const char *process_name)
 {
+    if (!g_mgx_socket.init()) {
+        mgx_log(MGX_LOG_STDERR, "socket init failed");
+        exit(1);
+    }
+
     mgx_worker_process_init(worker_nr);
     mgx_setproctitle(process_name);
     mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", process_name, g_pid);
