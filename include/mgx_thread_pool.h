@@ -21,10 +21,10 @@ private:
     void th_func();
     void signal_to_th();
 
-    static pthread_mutex_t m_mutex;
-    static pthread_cond_t  m_cond;
+    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t  m_cond = PTHREAD_COND_INITIALIZER;
 
-    static bool m_shutdown;
+    bool m_shutdown = false;
     int m_th_cnt;
     std::queue<char *> m_msg_queue;
     std::queue<char *>::size_type m_msg_queue_size;

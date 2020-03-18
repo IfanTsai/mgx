@@ -34,9 +34,9 @@ typedef struct {
     pmgx_conn_t pconn;
 } mgx_listen_skt_t, *pmgx_listen_skt_t;
 
-typedef void(Mgx_socket::*mgx_event_handler_t)(pmgx_conn_t);
-
 struct _mgx_conn {
+    typedef std::function<void(pmgx_conn_t)> mgx_event_handler_t;
+
     int fd;     /* connection socket fd */
     pmgx_listen_skt_t listen_skt;
     unsigned int instance:1;
@@ -128,6 +128,7 @@ private:
     time_t  m_timer_que_head_time;
     Mgx_thread *m_monitor_timer_thread;
 
+    /* mgx_socket.cpp */
     void read_conf();
     bool open_listen_skts();
     void close_listen_skts();

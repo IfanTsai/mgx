@@ -6,10 +6,6 @@
 
 extern Mgx_logic_socket g_mgx_socket;
 
-pthread_mutex_t Mgx_th_pool::m_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  Mgx_th_pool::m_cond = PTHREAD_COND_INITIALIZER;
-bool Mgx_th_pool::m_shutdown = false;
-
 Mgx_th_pool::Mgx_th_pool()
 {
     m_running_cnt = 0;

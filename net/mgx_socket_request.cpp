@@ -21,9 +21,9 @@ void Mgx_socket::wait_request_handler(pmgx_conn_t c)
     switch (c->recv_stat) {
         case PKG_HDR_START:
             if (recv_size == m_pkg_hdr_size) {
-                /* 
-                 * Once received a complete package header, 
-                 * so with the processing package header 
+                /*
+                 * Once received a complete package header,
+                 * so with the processing package header
                  */
                 wait_request_handler_process_v1(c);
             } else {
@@ -34,7 +34,7 @@ void Mgx_socket::wait_request_handler(pmgx_conn_t c)
             break;
         case PKG_HDR_RECEIVING:
             if (recv_size == c->rest_recv_size) {
-                /* 
+                /*
                  * The packet header has been received,
                  * so with the processing package header
                  */
@@ -46,9 +46,9 @@ void Mgx_socket::wait_request_handler(pmgx_conn_t c)
             break;
         case PKG_BODY_START:
             if (recv_size == c->rest_recv_size) {
-                /* 
-                 * The package header and body are all received, 
-                 * just process this package 
+                /*
+                 * The package header and body are all received,
+                 * just process this package
                  */
                 wait_request_handler_process_v2(c);
             } else {
@@ -59,9 +59,9 @@ void Mgx_socket::wait_request_handler(pmgx_conn_t c)
             break;
         case PKG_BODY_RECEIVING:
             if (recv_size == c->rest_recv_size) {
-                /* 
-                 * The package header and body are all received, 
-                 * just process this package 
+                /*
+                 * The package header and body are all received,
+                 * just process this package
                  */
                 wait_request_handler_process_v2(c);
             } else {
@@ -106,7 +106,7 @@ void Mgx_socket::wait_request_handler_process_v1(pmgx_conn_t c)
     unsigned short pkg_size = ppkg_hdr->pkg_size;
     if (pkg_size < m_pkg_hdr_size || pkg_size > (PKG_MAX_SIZE - 1000)) {
         /**
-         * The total length is less than the head length or the total length is too long, 
+         * The total length is less than the head length or the total length is too long,
          * I think it is a wrong package.
          * So the receiving state should be restored to the initial state.
          */
@@ -173,7 +173,7 @@ void Mgx_socket::send_msg_handler(pmgx_conn_t c)
 
     sem_post(&m_send_queue_sem);
 
-    c->throw_send_cnt = 0; 
+    c->throw_send_cnt = 0;
     delete[] c->psend_mem_addr;
     c->psend_mem_addr = nullptr;
 }

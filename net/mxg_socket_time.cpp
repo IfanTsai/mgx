@@ -10,7 +10,7 @@ inline time_t Mgx_socket::get_earliest_time()
 void Mgx_socket::add_to_timer_queue(pmgx_conn_t pconn)
 {
     time_t time_out = time(nullptr) + m_heart_wait_time;
-    
+
     pmgx_msg_hdr_t pmsg_hdr = new mgx_msg_hdr_t;
     pmsg_hdr->pconn = pconn;
     pmsg_hdr->cur_seq = pconn->m_cur_seq;
@@ -30,7 +30,7 @@ void Mgx_socket::delete_from_timer_queue(pmgx_conn_t pconn)
             break;
         }
     }
-    
+
     if (m_timer_que_size > 0)
         m_timer_que_head_time = get_earliest_time();
 }
@@ -62,19 +62,19 @@ void Mgx_socket::monitor_timer_th_func()
                 err = pthread_mutex_lock(&m_timer_que_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
-                
+
                 while ((pmsg_hdr = get_over_time_timer(cur_time)))
                     que.push(pmsg_hdr);
 
                 err = pthread_mutex_unlock(&m_timer_que_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_unlock error: %s", strerror(err));
-                
+
                 while (!que.empty()) {
                     pmsg_hdr = que.front();
                     que.pop();
                     if (pmsg_hdr->cur_seq == pmsg_hdr->pconn->m_cur_seq) {
-                        mgx_log(MGX_LOG_DEBUG, "time_duration: %d, wait_time: %d", 
+                        mgx_log(MGX_LOG_DEBUG, "time_duration: %d, wait_time: %d",
                             cur_time - pmsg_hdr->pconn->last_ping_time,  m_heart_wait_time );
                         if (cur_time - pmsg_hdr->pconn->last_ping_time > m_heart_wait_time * 3) {
                             mgx_log(MGX_LOG_DEBUG, "no heartbeat packet received after timeout");
@@ -95,7 +95,7 @@ pmgx_msg_hdr_t Mgx_socket::get_over_time_timer(time_t cur_time)
 {
     if (!m_timer_que_size || cur_time < get_earliest_time())
         return nullptr;
-    
+
     /* delete over timer */
     pmgx_msg_hdr_t pold_msg_hdr = m_timer_queue.begin()->second;
     m_timer_queue.erase(m_timer_queue.begin());

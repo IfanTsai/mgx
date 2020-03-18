@@ -66,7 +66,7 @@ pmgx_conn_t Mgx_socket::get_conn(int sock_fd)
         pconn->get_one_to_use();
         m_free_conns_cnt--;
         pconn->fd = sock_fd;
-    
+
         uintptr_t instance = pconn->instance;
         pconn->instance = !instance;
     } else {
@@ -124,7 +124,7 @@ void Mgx_socket::insert_recy_conn_queue(pmgx_conn_t c)
 
     c->in_recy_time = time(nullptr);
     c->m_cur_seq++;
-    
+
     m_recy_conn_set.insert(c);
     //m_recy_conn_set.push_back(c);
     m_total_recy_conns_cnt++;
