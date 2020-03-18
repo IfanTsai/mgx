@@ -87,6 +87,11 @@ bool Mgx_socket::open_listen_skts()
             return false;
         }
 
+        /* set socket SO_REUSEPORT to solve thundering herd effect */
+        if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+            mgx_log(MGX_LOG_ERR, "setsockopt SO_REUSEPORT %d error: %s", i, strerror(errno));
+        }
+
         set_nonblock(listenfd);  /* set socket io nonblock*/
 
         sprintf(buf, CONFIG_ListenPort"%d", i);
