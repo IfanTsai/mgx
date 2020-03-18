@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         mgx_log_stderr("load config failed !!!");
         exit(1);
     }
-    
+
     mgx_log_init();
     mgx_signal_init();
     if (!g_mgx_socket.init()) {

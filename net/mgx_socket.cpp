@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <string>
 
-Mgx_socket::Mgx_socket() 
+Mgx_socket::Mgx_socket()
 {
     pthread_mutex_init(&m_conn_mutex, nullptr);
     pthread_mutex_init(&m_recy_queue_mutex, nullptr);
@@ -42,16 +42,6 @@ Mgx_socket::~Mgx_socket()
     }
 
     conn_pool_destroy();
-
-#if 0
-    while (!m_msg_queue.empty()) {
-        char *buf = m_msg_queue.front();
-        m_msg_queue.pop();
-        delete[] buf;
-    }
-
-    pthread_mutex_destroy(&m_msg_queue_mutex);
-#endif
 }
 
 void Mgx_socket::read_conf()
@@ -175,7 +165,7 @@ void Mgx_socket::epoll_init()
     send_msg_th_init();
 
     heart_timer_init();
-    
+
     for (auto it = m_listen_skts.begin(); it != m_listen_skts.end(); it++) {
         pmgx_conn_t c = get_conn((*it)->fd);
         if (!c) {
@@ -185,7 +175,7 @@ void Mgx_socket::epoll_init()
         c->listen_skt = *it;
         (*it)->pconn = c;
 
-        c->r_handler = &Mgx_socket::event_accept;
+        c->r_handler = std::bind(&Mgx_socket::event_accept, this, std::placeholders::_1);
 
         if (!epoll_oper_event((*it)->fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, c)) {
             close_conn(c);
@@ -198,13 +188,13 @@ void Mgx_socket::epoll_init()
  * fd:            socket fd
  * e_type:        event types, eg. EPOLL_CTL_ADD
  * es:            events, eg. EPOLLIN | EPOLLRDHUP
- * add_or_del_es: 
- *    only valid if e_type is EPOLL_CTL_MOD, 
- *    1 means adding event flag, 0 means removing event flag, 
+ * add_or_del_es:
+ *    only valid if e_type is EPOLL_CTL_MOD,
+ *    1 means adding event flag, 0 means removing event flag,
  *    and - 1 means full coverage
  * c:             a connection in connection pool
  */
-bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es, 
+bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es,
                                     int add_or_del_es, pmgx_conn_t c)
 {
     struct epoll_event ev = { 0 };
@@ -230,7 +220,7 @@ bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es,
 
     ev.data.ptr = (void *)((uintptr_t)c | c->instance);
     if (epoll_ctl(m_epoll_fd, e_type, fd, &ev) < 0) {
-        mgx_log(MGX_LOG_STDERR, "epoll_ctl (%d, %d, %d, %d) error: %s", 
+        mgx_log(MGX_LOG_STDERR, "epoll_ctl (%d, %d, %d, %d) error: %s",
                             fd, e_type, es, add_or_del_es, strerror(errno));
         return false;
     }
@@ -258,7 +248,7 @@ bool Mgx_socket::epoll_process_events(int timeout)
         c = (pmgx_conn_t)((uintptr_t)c & (uintptr_t) ~1);
 
         if (c->fd == -1 || c->instance != instance) {
-            /*   
+            /*
              * the stale event from a file descriptor
              * that was just closed in this iteration
              */
@@ -273,11 +263,11 @@ bool Mgx_socket::epoll_process_events(int timeout)
         */
 
         if (recv_events & EPOLLIN) {
-            (this->*(c->r_handler))(c);  
+            c->r_handler(c);
         }
 
         if (recv_events & EPOLLOUT) {
-            (this->*(c->w_handler))(c);
+            c->w_handler(c);
         }
     }
     return true;
@@ -336,8 +326,8 @@ void Mgx_socket::send_msg_th_func()
 
                 if (send_size > 0) {
                     if (send_size == pconn->rest_send_size) {
-                        pconn->throw_send_cnt = 0; 
-                        
+                        pconn->throw_send_cnt = 0;
+
                         delete[] pconn->psend_mem_addr;
                         pconn->psend_mem_addr = nullptr;
                         mgx_log(MGX_LOG_DEBUG, "send over !!!");
@@ -358,7 +348,7 @@ void Mgx_socket::send_msg_th_func()
                         mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
                     }
                 } else {
-                    pconn->throw_send_cnt = 0; 
+                    pconn->throw_send_cnt = 0;
                     delete[] pconn->psend_mem_addr;
                     pconn->psend_mem_addr = nullptr;
                 }
@@ -381,7 +371,7 @@ ssize_t Mgx_socket::send_uninterrupt(pmgx_conn_t c, char *buf, ssize_t size)
             return n;
         else if (errno == EAGAIN)
             return -1;
-        else if (errno == EINTR) 
+        else if (errno == EINTR)
             continue;
         else
             return -2;

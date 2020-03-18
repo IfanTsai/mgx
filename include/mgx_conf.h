@@ -11,7 +11,7 @@
 class Mgx_conf
 {
 private:
-    Mgx_conf(); 
+    Mgx_conf();
 
 public:
     ~Mgx_conf();

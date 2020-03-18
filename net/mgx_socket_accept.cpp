@@ -50,8 +50,8 @@ retry:
     if (!use_accept4)
         set_nonblock(conn_fd);
 
-    pconn_new->r_handler = &Mgx_socket::wait_request_handler;
-    pconn_new->w_handler = &Mgx_socket::send_msg_handler;
+    pconn_new->r_handler = std::bind(&Mgx_socket::wait_request_handler, this, std::placeholders::_1);
+    pconn_new->w_handler = std::bind(&Mgx_socket::send_msg_handler, this, std::placeholders::_1);
 
     if (!epoll_oper_event(conn_fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, pconn_new)) {
         close_conn(pconn_new);
