@@ -27,18 +27,18 @@ bool Mgx_conf::load(const char *file_name)
         std::string val = line.substr(index + 1, line.size() - 1);
 
         /* put key and value in configs map */
-        configs[strim(key)] = strim(val);
+        configs[strim(key)] = std::move(strim(val));
     }
     is.close();
     return true;
 }
 
-std::string Mgx_conf::get_string(const std::string &key, std::string default_str)
+std::string Mgx_conf::get_string(const std::string &key, const std::string &default_str)
 {
     return (configs.find(key) != configs.end()) ? configs[key] : default_str;
 }
 
-int Mgx_conf::get_int(const std::string &key, int default_int)
+int Mgx_conf::get_int(const std::string &key, const int default_int)
 {
     std::string val = get_string(key);
     if (val.empty()) return default_int;
