@@ -30,8 +30,8 @@ public:
         return instance;
     }
     bool load(const char *file_name);
-    std::string get_string(const std::string &key, std::string default_str = "");
-    int get_int(const std::string &key, int default_int = 1);
+    std::string get_string(const std::string &key, const std::string &default_str = "");
+    int get_int(const std::string &key, const int default_int = 1);
 };
 
 #endif  // __MGX_CONF_H__
