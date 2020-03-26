@@ -3,7 +3,7 @@ include config.mk
 PHONY := all
 all:
 	@for dir in $(BUILD_DIR); do \
-		make -C $$dir; \
+		$(MAKE) -C $$dir; \
 	done
 
 PHONY += clean
