@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <pthread.h>
 
 extern char **environ;
 extern char **g_argv;
@@ -39,4 +40,7 @@ void mgx_setproctitle(const char *title)
     strcpy(g_argv[0], title); /* set title */
     /* clear the reset memory */
     memset(g_argv[0] + title_size, 0, g_env_size + argv_size - title_size);
+
+    /* set main thread name */
+    pthread_setname_np(pthread_self(), "mgx_main_th");
 }

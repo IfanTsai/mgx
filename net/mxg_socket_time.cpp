@@ -38,7 +38,7 @@ void Mgx_socket::delete_from_timer_queue(pmgx_conn_t pconn)
 void Mgx_socket::heart_timer_init()
 {
     /* thread used to monitor timer queue */
-    m_monitor_timer_thread = new Mgx_thread(std::bind(&Mgx_socket::monitor_timer_th_func, this));
+    m_monitor_timer_thread = new Mgx_thread(std::bind(&Mgx_socket::monitor_timer_th_func, this), "mgx_timer_th");
     int err = m_monitor_timer_thread->start();
     if (err != 0) {
         mgx_log(MGX_LOG_STDERR, "heart timer thread create error: %s", strerror(err));

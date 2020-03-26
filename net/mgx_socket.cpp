@@ -149,7 +149,7 @@ void Mgx_socket::send_msg_th_init()
     }
 
     /* thread used to process send message queue */
-    m_send_thread = new Mgx_thread(std::bind(&Mgx_socket::send_msg_th_func, this));
+    m_send_thread = new Mgx_thread(std::bind(&Mgx_socket::send_msg_th_func, this), "mgx_send_th");
     int err = m_send_thread->start();
     if (err != 0) {
         mgx_log(MGX_LOG_STDERR, "send thread create error: %s", strerror(err));
