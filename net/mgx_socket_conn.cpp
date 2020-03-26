@@ -47,7 +47,7 @@ void Mgx_socket::conn_pool_init()
     m_free_conns_cnt = m_total_conns_cnt = m_worker_conns;
 
     /* thread used to delayed recovery connections */
-    m_recy_thread = new Mgx_thread(std::bind(&Mgx_socket::recy_conn_th_func, this));
+    m_recy_thread = new Mgx_thread(std::bind(&Mgx_socket::recy_conn_th_func, this), "mgx_recy_th");
     int err = m_recy_thread->start();
     if (err != 0) {
         mgx_log(MGX_LOG_STDERR, "recy thread start error: %s", strerror(err));

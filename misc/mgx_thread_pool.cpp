@@ -22,7 +22,8 @@ bool Mgx_th_pool::create(int th_cnt)
 
     m_th_cnt = th_cnt;
     for (int i = 0; i < m_th_cnt; i++) {
-        Mgx_thread *thread = new Mgx_thread(std::bind(&Mgx_th_pool::th_func, this));
+        Mgx_thread *thread = new Mgx_thread(std::bind(&Mgx_th_pool::th_func, this),
+                                            "mgx_th_pool_" + std::to_string(i));
         m_threads.emplace_back(std::move(thread));
         err = m_threads[i]->start();
         if (err != 0) {
