@@ -156,7 +156,8 @@ void Mgx_socket::send_msg_handler(pmgx_conn_t c)
     ssize_t send_size = send_uninterrupt(c, c->psend_mem_addr, c->rest_send_size);
     if (send_size > 0) {
         if (send_size == c->rest_send_size) {
-            if (!epoll_oper_event(c->fd, EPOLL_CTL_MOD, EPOLLOUT, 0, c)) {
+            if (!epoll_oper_event(c->fd, EPOLL_CTL_MOD, EPOLLOUT,
+                                    EPOLL_ES_MOD_ACTION::REMOVE, c)) {
                 mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
             }
             mgx_log(MGX_LOG_DEBUG, "send over by epoll !!!");

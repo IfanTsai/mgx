@@ -182,7 +182,8 @@ void Mgx_socket::epoll_init()
 
         c->r_handler = std::bind(&Mgx_socket::event_accept, this, std::placeholders::_1);
 
-        if (!epoll_oper_event((*it)->fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, c)) {
+        if (!epoll_oper_event((*it)->fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP,
+                                EPOLL_ES_MOD_ACTION::IGNORE, c)) {
             close_conn(c);
             return;
         }
@@ -193,14 +194,14 @@ void Mgx_socket::epoll_init()
  * fd:            socket fd
  * e_type:        event types, eg. EPOLL_CTL_ADD
  * es:            events, eg. EPOLLIN | EPOLLRDHUP
- * add_or_del_es:
+ * mod_action:
  *    only valid if e_type is EPOLL_CTL_MOD,
  *    1 means adding event flag, 0 means removing event flag,
  *    and - 1 means full coverage
  * c:             a connection in connection pool
  */
 bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es,
-                                    int add_or_del_es, pmgx_conn_t c)
+                                    EPOLL_ES_MOD_ACTION mod_action, pmgx_conn_t c)
 {
     struct epoll_event ev = { 0 };
 
@@ -209,11 +210,11 @@ bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es,
             c->events = ev.events = es;
             break;
         case EPOLL_CTL_MOD:
-            if (add_or_del_es == 1)
+            if (mod_action == EPOLL_ES_MOD_ACTION::ADD)
                 c->events |= es;
-            else if (add_or_del_es == 0)
+            else if (mod_action == EPOLL_ES_MOD_ACTION::REMOVE)
                 c->events &= ~es;
-            else if (add_or_del_es == -1)
+            else if (mod_action == EPOLL_ES_MOD_ACTION::FULL_COVERAGE)
                 c->events = es;
             ev.events = c->events;
             break;
@@ -226,7 +227,7 @@ bool Mgx_socket::epoll_oper_event(int fd, uint32_t e_type, uint32_t es,
     ev.data.ptr = (void *)((uintptr_t)c | c->instance);
     if (epoll_ctl(m_epoll_fd, e_type, fd, &ev) < 0) {
         mgx_log(MGX_LOG_STDERR, "epoll_ctl (%d, %d, %d, %d) error: %s",
-                            fd, e_type, es, add_or_del_es, strerror(errno));
+                            fd, e_type, es, static_cast<int>(mod_action), strerror(errno));
         return false;
     }
     return true;
@@ -341,7 +342,8 @@ void Mgx_socket::send_msg_th_func()
                         pconn->psend_buf += send_size;
                         pconn->rest_send_size -= send_size;
                         pconn->throw_send_cnt++;
-                        if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
+                        if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT,
+                                                EPOLL_ES_MOD_ACTION::ADD, pconn)) {
                             mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
                         }
                     }
@@ -349,7 +351,8 @@ void Mgx_socket::send_msg_th_func()
                     pconn->throw_send_cnt = 0;
                 } else if (send_size == -1) {
                     pconn->throw_send_cnt++;
-                    if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pconn)) {
+                    if (!epoll_oper_event(pconn->fd, EPOLL_CTL_MOD, EPOLLOUT,
+                                            EPOLL_ES_MOD_ACTION::ADD, pconn)) {
                         mgx_log(MGX_LOG_STDERR, "epoll_oper_event EPOLL_CTL_MOD error: %s", strerror(errno));
                     }
                 } else {
