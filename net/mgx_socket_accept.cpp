@@ -44,7 +44,7 @@ retry:
         mgx_log(MGX_LOG_ALERT, "connection pool is full");
         return;
     }
-    
+
     memcpy(&pconn_new->conn_sockaddr, &cliaddr, addrlen);
 
     if (!use_accept4)
@@ -53,7 +53,8 @@ retry:
     pconn_new->r_handler = std::bind(&Mgx_socket::wait_request_handler, this, std::placeholders::_1);
     pconn_new->w_handler = std::bind(&Mgx_socket::send_msg_handler, this, std::placeholders::_1);
 
-    if (!epoll_oper_event(conn_fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, pconn_new)) {
+    if (!epoll_oper_event(conn_fd, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP,
+                            EPOLL_ES_MOD_ACTION::IGNORE, pconn_new)) {
         close_conn(pconn_new);
         return;
     }

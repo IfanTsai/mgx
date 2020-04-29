@@ -26,6 +26,13 @@
 
 class Mgx_socket;
 
+enum class EPOLL_ES_MOD_ACTION {
+	FULL_COVERAGE = -1,
+	REMOVE,
+	ADD,
+	IGNORE,
+};
+
 typedef struct _mgx_conn mgx_conn_t, *pmgx_conn_t;
 
 typedef struct {
@@ -86,7 +93,7 @@ public:
     virtual bool init();
     void epoll_init();
     bool epoll_process_events(int timeout);
-    bool epoll_oper_event(int fd, uint32_t e_type, uint32_t flag, int add_or_del_es, pmgx_conn_t pconn);
+    bool epoll_oper_event(int fd, uint32_t e_type, uint32_t flag, EPOLL_ES_MOD_ACTION mod_action, pmgx_conn_t pconn);
 
 protected:
     void send_msg(char *send_buf);
