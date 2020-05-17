@@ -13,6 +13,7 @@ extern bool g_is_mgx_master;
 static void default_handler(int signo, siginfo_t *info, void *ucontext);
 static void mgx_process_get_status();
 bool g_mgx_reap;
+bool g_mgx_log_rotate;
 
 typedef struct {
     int signo;
@@ -21,7 +22,7 @@ typedef struct {
 } mgx_signal_t;
 
 mgx_signal_t signals[] = {
-    { SIGHUP,  "SIGHUP",  default_handler },
+    { SIGUSR1, "SIGUSR1", default_handler },
     { SIGINT,  "SIGINT",  default_handler },
     { SIGTERM, "SIGTERM", default_handler },
     { SIGHUP,  "SIGHUP",  default_handler },
@@ -67,6 +68,9 @@ static void default_handler(int signo, siginfo_t *siginfo, void *ucontext)
             case SIGCHLD:
 				mgx_process_get_status(); /* waitpid */
                 g_mgx_reap = true;
+                break;
+            case SIGUSR1:
+                g_mgx_log_rotate = true;  /* log rotate by date */
                 break;
         }
     } else {
