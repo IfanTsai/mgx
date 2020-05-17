@@ -38,7 +38,7 @@
 mgx
 
 # others
-log/mgx.log
+log/*
 tags
 cscope*
 .vscode

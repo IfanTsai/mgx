@@ -17,6 +17,7 @@ extern bool g_is_mgx_master;
 extern Mgx_logic_socket g_mgx_socket;
 extern Mgx_th_pool g_mgx_th_pool;
 extern bool g_mgx_reap;
+extern bool g_mgx_log_rotate;
 
 static const char *MASTER_PROCESS_NAME = "mgx: master process";
 static const char *WORKER_PROCESS_NAME = "mgx: worker process";
@@ -123,6 +124,12 @@ void mgx_process_cycle()
             g_mgx_reap = false;
             mgx_spawn_process(nums_worker++, WORKER_PROCESS_NAME);
             mgx_log(MGX_LOG_NOTICE, "restart subprocess");
+        }
+
+        if (g_mgx_log_rotate) {
+            g_mgx_log_rotate = false;
+            mgx_log_init();      /* log rotate by date */
+            mgx_log(MGX_LOG_NOTICE, "log rotate by date");
         }
     }
 }

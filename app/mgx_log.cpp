@@ -38,6 +38,32 @@ void mgx_log_stderr(const char *fmt, ...)
     (void)write(STDERR_FILENO, err_str_buf, p - err_str_buf);
 }
 
+static char *get_cur_time_string(const char *time_format, char *time_buf)
+{
+    time_t t = time(nullptr);
+    struct tm *cur_tm = localtime(&t);
+    sprintf(time_buf, time_format,
+            cur_tm->tm_year + 1900, cur_tm->tm_mon + 1, cur_tm->tm_mday,
+            cur_tm->tm_hour, cur_tm->tm_min, cur_tm->tm_sec);
+    return time_buf;
+}
+
+static void mk_pdirs(const char *fname)
+{
+    char dirname[FILENAME_MAX] = { 0 };
+    sprintf(dirname, "%s", fname);
+
+    struct stat dstat;
+    char *p = dirname;
+    while ( p = strchr(p + 1, '/') ) {
+        *p = 0;
+        if (stat(dirname, &dstat)) {
+            mkdir(dirname, 0755);
+        }
+        *p = '/';
+    }
+}
+
 void mgx_log_init()
 {
     Mgx_conf *mgx_conf = Mgx_conf::get_instance();
@@ -46,9 +72,16 @@ void mgx_log_init()
     g_mgx_log.debug_mode = mgx_conf->get_int(CONFIG_DebugMode, DEFAULT_DEBUG_MODE) ? true : false;
     std::string log_path = mgx_conf->get_string(CONFIG_LogPathName, DEFAULT_LOG_PATH);
 
-    g_mgx_log.fd = open(log_path.c_str(), O_WRONLY | O_APPEND | O_SYNC | O_CREAT, 0644);
+    char time_buf[64] = { 0 };
+    get_cur_time_string("%04d/%02d/%02d %02d/%02d/%02d", time_buf);
+    std::string log_file = log_path + "/" + strtok(time_buf, " ") + "/mgx.log";
+    mk_pdirs(log_file.c_str());
+
+    if (-1 != g_mgx_log.fd && STDERR_FILENO != (g_mgx_log.fd))
+        close(g_mgx_log.fd);
+    g_mgx_log.fd = open(log_file.c_str(), O_WRONLY | O_APPEND | O_SYNC | O_CREAT, 0644);
     if (g_mgx_log.fd < 0) {
-        mgx_log_stderr("open %s error: %s", log_path.c_str(), strerror(errno));
+        mgx_log_stderr("open %s error: %s", log_file.c_str(), strerror(errno));
         /* if log path open failed, use stderr */
         g_mgx_log.fd = STDERR_FILENO;
     }
@@ -58,12 +91,8 @@ void mgx_log(int level, const char *fmt, ...)
 {
     if (level > g_mgx_log.log_level) return;
 
-    time_t t = time(NULL);
-    struct tm *cur_tm = localtime(&t);
     char time_buf[64] = { 0 };
-    sprintf(time_buf, "%04d-%02d-%02d %02d:%02d:%02d",
-            cur_tm->tm_year + 1900, cur_tm->tm_mon + 1, cur_tm->tm_mday,
-            cur_tm->tm_hour, cur_tm->tm_min, cur_tm->tm_sec);
+    get_cur_time_string("%04d-%02d-%02d %02d:%02d:%02d", time_buf);
 
     u_char log_str_buf[MGX_MAX_LOG_STR_SIZE] = { 0 };
     u_char *p = memcpy_end(log_str_buf, time_buf, strlen(time_buf));

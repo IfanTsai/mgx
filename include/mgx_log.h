@@ -3,7 +3,7 @@
 
 #define DEFAULT_LOG_LEVEL 6
 #define DEFAULT_DEBUG_MODE 0
-#define DEFAULT_LOG_PATH  "./log/mgx.log"
+#define DEFAULT_LOG_PATH  "./log/"
 
 #define MGX_LOG_STDERR 0
 #define MGX_LOG_EMERG  1
@@ -17,7 +17,7 @@
 
 typedef struct {
     int log_level;
-    int fd;
+    int fd = -1;
     bool debug_mode;
 } mgx_log_t;
 
