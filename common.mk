@@ -12,7 +12,7 @@ OBJDUMP     = $(CROSS_COMPILE)objdump
 
 CFLAGS := -Wall -O2 -std=c++11
 
-LDFLAGS := -lpthread
+LDFLAGS := -lpthread -rdynamic
 
 ifeq ($(DEBUG), true)
 VERSION = debug

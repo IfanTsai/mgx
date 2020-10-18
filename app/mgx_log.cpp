@@ -122,3 +122,8 @@ void mgx_log(int level, const char *fmt, ...)
         mgx_log_stderr((char *)log_str_buf);
     }
 }
+
+void mgx_log(int level, const std::string &str)
+{
+    mgx_log(level, str.c_str());
+}
