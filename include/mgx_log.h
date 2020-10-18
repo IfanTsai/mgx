@@ -1,6 +1,8 @@
 #if !defined(__MGX_LOG_H__)
 #define __MGX_LOG_H__
 
+#include <string>
+
 #define DEFAULT_LOG_LEVEL 6
 #define DEFAULT_DEBUG_MODE 0
 #define DEFAULT_LOG_PATH  "./log/"
@@ -24,6 +26,7 @@ typedef struct {
 void mgx_log_stderr(const char *fmt, ...);
 void mgx_log_init();
 void mgx_log(int level, const char *fmt, ...);
+void mgx_log(int level, const std::string &str);
 void mgx_log_free();
 
 #endif  // __MGX_LOG_H__
