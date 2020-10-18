@@ -16,7 +16,7 @@ static void mgx_backtrace(std::vector<std::string> &bt, int size, int skip)
         return;
     }
 
-    for (size_t i = skip; i < nptrs - 2; i++)
+    for (size_t i = skip; i < nptrs; i++)
         bt.push_back(strs[i]);
 
     free(strs);

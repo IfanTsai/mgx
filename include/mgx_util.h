@@ -11,7 +11,7 @@ std::string mgx_backtrace2str(int size, int skip = 1, const std::string &prefix 
     do {  \
         if (!(exp)) { \
             mgx_log(MGX_LOG_STDERR, std::string("Assertion: " #exp) + \
-                    "\n"#msg"\n" + \
+                    "\n" + msg + "\n" + \
                     "backtrace: " +  \
                     mgx_backtrace2str(100)); \
             assert(exp); \
