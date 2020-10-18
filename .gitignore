@@ -43,5 +43,6 @@ tags
 cscope*
 .vscode
 .clang-format
+core
 
 # End of https://www.gitignore.io/api/c++
