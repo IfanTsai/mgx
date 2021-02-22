@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
         if (res < 0) {
             mgx_log(MGX_LOG_STDERR, "mgx_daemon create error");
         } else if (res == 1) {
+            close(STDERR_FILENO);
             return res;
         }
         /* this is a daemon */
