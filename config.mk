@@ -7,6 +7,9 @@ BUILD_DIR = $(BUILD_ROOT)/signal/  \
 			$(BUILD_ROOT)/process/ \
 			$(BUILD_ROOT)/misc/ \
 			$(BUILD_ROOT)/bussiness/ \
+			$(BUILD_ROOT)/http/     \
 			$(BUILD_ROOT)/app/     \
 
 export DEBUG = true
+
+#export USE_HTTP = true

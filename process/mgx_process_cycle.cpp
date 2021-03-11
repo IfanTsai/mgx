@@ -14,7 +14,7 @@
 extern char **g_argv;
 extern int g_pid;
 extern bool g_is_mgx_master;
-extern Mgx_logic_socket g_mgx_socket;
+extern Mgx_socket *gp_mgx_socket;
 extern Mgx_th_pool g_mgx_th_pool;
 extern bool g_mgx_reap;
 extern bool g_mgx_log_rotate;
@@ -37,12 +37,12 @@ static inline void mgx_worker_process_init(int worker_nr)
         exit(1);
     }
 
-    g_mgx_socket.epoll_init();
+    gp_mgx_socket->epoll_init();
 }
 
 static void mgx_worker_process_cycle(int worker_nr, const char *process_name)
 {
-    if (!g_mgx_socket.init()) {
+    if (!gp_mgx_socket->init()) {
         mgx_log(MGX_LOG_STDERR, "socket init failed");
         exit(1);
     }
@@ -52,7 +52,7 @@ static void mgx_worker_process_cycle(int worker_nr, const char *process_name)
     mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", process_name, g_pid);
 
     for (;;) {
-        g_mgx_socket.epoll_process_events(-1);
+        gp_mgx_socket->epoll_process_events(-1);
         // ...
     }
 

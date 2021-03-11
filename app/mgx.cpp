@@ -8,6 +8,7 @@
 #include "mgx_signal.h"
 #include "mgx_daemon.h"
 #include "mgx_logic_socket.h"
+#include "mgx_http_socket.h"
 #include "mgx_thread_pool.h"
 #include "mgx_crc32.h"
 
@@ -16,8 +17,9 @@ using namespace std;
 char **g_argv;
 int g_pid;
 bool g_is_mgx_master;
-Mgx_logic_socket g_mgx_socket;
 Mgx_th_pool g_mgx_th_pool;
+
+Mgx_socket *gp_mgx_socket;
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +45,12 @@ int main(int argc, char *argv[])
         }
         /* this is a daemon */
     }
+
+#ifdef USE_HTTP
+    gp_mgx_socket = new Mgx_http_socket();
+#else
+    gp_mgx_socket = new Mgx_logic_socket();
+#endif
 
     g_is_mgx_master = true;
     mgx_process_cycle();

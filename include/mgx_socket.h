@@ -91,6 +91,7 @@ public:
     ssize_t     m_msg_hdr_size = sizeof(mgx_msg_hdr_t);
 
     virtual bool init();
+    virtual void th_msg_process_func(char *buf);
     void epoll_init();
     bool epoll_process_events(int timeout);
     bool epoll_oper_event(int fd, uint32_t e_type, uint32_t flag, EPOLL_ES_MOD_ACTION mod_action, pmgx_conn_t pconn);
@@ -99,6 +100,8 @@ protected:
     void send_msg(char *send_buf);
     /* mgx_socket_conn.cpp */
     void insert_recy_conn_queue(pmgx_conn_t c);
+    /* mgx_socket_request.cpp */
+    ssize_t recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size);
 
 private:
     int m_listen_cnt = 1;
@@ -157,11 +160,10 @@ private:
 
     /* mgx_socket_request.cpp */
     void send_msg_handler(pmgx_conn_t c);
+    virtual void _wait_request_handler(pmgx_conn_t c);
     void wait_request_handler(pmgx_conn_t c);
-    ssize_t recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size);
     void wait_request_handler_process_v1(pmgx_conn_t c);  /* process package header */
     void wait_request_handler_process_v2(pmgx_conn_t c);  /* process package body */
-    virtual void th_msg_process_func(char *buf);
 
     /* mgx_socket_time.cpp */
     void heart_timer_init();

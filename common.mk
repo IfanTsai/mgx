@@ -14,11 +14,15 @@ CFLAGS := -Wall -O2 -std=c++11
 
 LDFLAGS := -lpthread -rdynamic
 
+ifeq ($(USE_HTTP), true)
+  CFLAGS += -DUSE_HTTP
+endif
+
 ifeq ($(DEBUG), true)
-VERSION = debug
-CFLAGS += -g
+  VERSION = debug
+  CFLAGS += -g
 else
-VERSION = release
+  VERSION = release
 endif
 
 SRCS = $(wildcard *.cpp)
@@ -42,7 +46,7 @@ LINK_OBJ += $(OBJS)
 all: $(DEPS) $(OBJS) $(BIN)
 
 ifneq ("$(wildcard $(DEPS))", "")
-include $(DEPS)
+  include $(DEPS)
 endif
 
 $(BIN): $(LINK_OBJ)

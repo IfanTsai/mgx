@@ -12,7 +12,7 @@
 
 extern Mgx_th_pool g_mgx_th_pool;
 
-void Mgx_socket::wait_request_handler(pmgx_conn_t c)
+void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
 {
     ssize_t recv_size = recv_process(c, c->precv_buf, c->rest_recv_size);
     if (recv_size <= 0)
@@ -72,6 +72,11 @@ void Mgx_socket::wait_request_handler(pmgx_conn_t c)
         default:
             break;
     }
+}
+
+void Mgx_socket::wait_request_handler(pmgx_conn_t c)
+{
+    _wait_request_handler(c);
 }
 
 ssize_t Mgx_socket::recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size)
