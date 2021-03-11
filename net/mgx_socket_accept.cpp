@@ -59,9 +59,11 @@ retry:
         return;
     }
 
+#ifndef USE_HTTP
     if (m_enabled_heartbeat) {
         add_to_timer_queue(pconn_new);
         mgx_log(MGX_LOG_DEBUG, "add_to_timer_queue called");
     }
+#endif
 }
 

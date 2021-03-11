@@ -1,10 +1,11 @@
 #include "mgx_thread_pool.h"
 #include "mgx_log.h"
 #include "mgx_logic_socket.h"
+#include "mgx_http_socket.h"
 #include <cstring>
 #include <unistd.h>
 
-extern Mgx_logic_socket g_mgx_socket;
+extern Mgx_socket *gp_mgx_socket;
 
 Mgx_th_pool::Mgx_th_pool()
 {
@@ -73,7 +74,7 @@ void Mgx_th_pool::th_func()
         m_running_cnt++;
 
         /* handle specific business */
-        g_mgx_socket.th_msg_process_func(msg_buf);
+        gp_mgx_socket->th_msg_process_func(msg_buf);
 
         delete[] msg_buf;
         m_running_cnt--;

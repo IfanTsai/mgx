@@ -169,7 +169,10 @@ void Mgx_socket::epoll_init()
 
     send_msg_th_init();
 
-    heart_timer_init();
+#ifndef USE_HTTP
+    if (m_enabled_heartbeat)
+        heart_timer_init();
+#endif
 
     for (auto it = m_listen_skts.begin(); it != m_listen_skts.end(); it++) {
         pmgx_conn_t c = get_conn((*it)->fd);
