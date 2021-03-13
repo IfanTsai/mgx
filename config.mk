@@ -12,4 +12,4 @@ BUILD_DIR = $(BUILD_ROOT)/signal/  \
 
 export DEBUG = true
 
-#export USE_HTTP = true
+export USE_HTTP = true
