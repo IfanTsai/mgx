@@ -294,7 +294,9 @@ void Mgx_socket::send_msg_th_func()
 {
     int err;
     pmgx_msg_hdr_t pmsg_hdr = nullptr;
+#ifndef USE_HTTP
     pmgx_pkg_hdr_t ppkg_hdr = nullptr;
+#endif
     pmgx_conn_t pconn;
 
     for (;;) {
@@ -307,7 +309,9 @@ void Mgx_socket::send_msg_th_func()
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
 
                 pmsg_hdr = (pmgx_msg_hdr_t)(*it);
+#ifndef USE_HTTP
                 ppkg_hdr = (pmgx_pkg_hdr_t)(*it + m_msg_hdr_size);
+#endif
                 pconn = pmsg_hdr->pconn;
 
                 if (pconn->m_cur_seq != pmsg_hdr->cur_seq) {
@@ -323,7 +327,11 @@ void Mgx_socket::send_msg_th_func()
                 }
 
                 pconn->psend_buf = (*it) + m_msg_hdr_size;
+#ifndef USE_HTTP
                 pconn->rest_send_size = ppkg_hdr->pkg_size;
+#else
+                pconn->rest_send_size = strlen(*it + m_msg_hdr_size);
+#endif
 
                 mgx_log(MGX_LOG_DEBUG, "start to send %d data", pconn->rest_send_size);
 

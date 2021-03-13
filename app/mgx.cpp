@@ -12,8 +12,6 @@
 #include "mgx_thread_pool.h"
 #include "mgx_crc32.h"
 
-using namespace std;
-
 char **g_argv;
 int g_pid;
 bool g_is_mgx_master;

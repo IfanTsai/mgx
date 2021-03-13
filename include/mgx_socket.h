@@ -77,6 +77,9 @@ struct _mgx_conn {
 typedef struct {
     pmgx_conn_t pconn;
     uint64_t    cur_seq;
+#ifdef USE_HTTP
+    uint        http_method;
+#endif
     // ...
 } mgx_msg_hdr_t, *pmgx_msg_hdr_t;
 

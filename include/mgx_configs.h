@@ -20,4 +20,7 @@
 #define CONFIG_Heartbeat          "Heartbeat"
 #define CONFIG_HeartWaitTime      "HeartWaitTime"
 
+/* Http */
+#define CONFIG_IndexPath          "IndexPath"
+
 #endif // __MGX_CONFIGS_H__
