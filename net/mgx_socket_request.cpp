@@ -12,7 +12,7 @@
 
 extern Mgx_th_pool g_mgx_th_pool;
 
-void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
+void Mgx_socket::_read_request_handler(pmgx_conn_t c)
 {
     ssize_t recv_size = recv_process(c, c->precv_buf, c->rest_recv_size);
     if (recv_size <= 0)
@@ -25,7 +25,7 @@ void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
                  * Once received a complete package header,
                  * so with the processing package header
                  */
-                wait_request_handler_process_v1(c);
+                read_request_handler_process_v1(c);
             } else {
                 c->recv_stat = PKG_HDR_RECEIVING;  /* next status */
                 c->precv_buf += recv_size;
@@ -38,7 +38,7 @@ void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
                  * The packet header has been received,
                  * so with the processing package header
                  */
-                wait_request_handler_process_v1(c);
+                read_request_handler_process_v1(c);
             } else {
                 c->precv_buf += recv_size;
                 c->rest_recv_size -= recv_size;
@@ -50,7 +50,7 @@ void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
                  * The package header and body are all received,
                  * just process this package
                  */
-                wait_request_handler_process_v2(c);
+                read_request_handler_process_v2(c);
             } else {
                 c->recv_stat = PKG_BODY_RECEIVING;  /* next status */
                 c->precv_buf += recv_size;
@@ -63,7 +63,7 @@ void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
                  * The package header and body are all received,
                  * just process this package
                  */
-                wait_request_handler_process_v2(c);
+                read_request_handler_process_v2(c);
             } else {
                 c->precv_buf += recv_size;
                 c->rest_recv_size -= recv_size;
@@ -74,9 +74,9 @@ void Mgx_socket::_wait_request_handler(pmgx_conn_t c)
     }
 }
 
-void Mgx_socket::wait_request_handler(pmgx_conn_t c)
+void Mgx_socket::read_request_handler(pmgx_conn_t c)
 {
-    _wait_request_handler(c);
+    _read_request_handler(c);
 }
 
 ssize_t Mgx_socket::recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size)
@@ -104,7 +104,7 @@ ssize_t Mgx_socket::recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size)
     return n;
 }
 
-void Mgx_socket::wait_request_handler_process_v1(pmgx_conn_t c)
+void Mgx_socket::read_request_handler_process_v1(pmgx_conn_t c)
 {
     pmgx_pkg_hdr_t ppkg_hdr = (pmgx_pkg_hdr_t)c->hdr_buf;
 
@@ -130,7 +130,7 @@ void Mgx_socket::wait_request_handler_process_v1(pmgx_conn_t c)
         memcpy(tmp_buf, ppkg_hdr, m_pkg_hdr_size);
         if (pkg_size == m_pkg_hdr_size) {
             /* no package body */
-            wait_request_handler_process_v2(c);
+            read_request_handler_process_v2(c);
         } else {
             c->recv_stat = PKG_BODY_START;  /* next status */
             c->precv_buf = tmp_buf + m_pkg_hdr_size;
@@ -139,7 +139,7 @@ void Mgx_socket::wait_request_handler_process_v1(pmgx_conn_t c)
     }
 }
 
-void Mgx_socket::wait_request_handler_process_v2(pmgx_conn_t c)
+void Mgx_socket::read_request_handler_process_v2(pmgx_conn_t c)
 {
     /* let the thread pool handle the received message */
     g_mgx_th_pool.insert_msg_to_queue_and_signal(c->precv_mem_addr);
