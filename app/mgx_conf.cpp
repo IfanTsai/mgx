@@ -23,8 +23,8 @@ bool Mgx_conf::load(const char *file_name)
 
         /* split by '=', get key and value */
         int index = line.find_first_of('=');
-        std::string key = line.substr(0, index - 1);
-        std::string val = line.substr(index + 1, line.size() - 1);
+        std::string key = line.substr(0, index);
+        std::string val = line.substr(index + 1, line.size() - key.size());
 
         /* put key and value in configs map */
         configs[strim(key)] = std::move(strim(val));
