@@ -9,8 +9,14 @@
 #define LF    '\n'
 #define CRLF  "\r\n"
 
-#define METHOD_GET  (0x01)
-#define METHOD_POST (0x02)
+#define METHOD_GET     0x01
+#define METHOD_HEAD    0x02
+#define METHOD_POST    0x03
+#define METHOD_PUT     0x04
+#define METHOD_DELETE  0x05
+#define METHOD_TRACE   0x06
+#define METHOD_OPTIONS 0x07
+#define METHOD_CONNECT 0x08
 
 #define DEFAULT_INDEX_PATH  "./html/"
 
@@ -20,7 +26,7 @@ typedef struct _mgx_http_request {
 
     char *request_line = nullptr;
     char *request_head = nullptr;
-    char *reqeust_body = nullptr;
+    char *request_body = nullptr;
 
     std::unordered_map<std::string, std::string> headers;
     uint method;
@@ -31,7 +37,7 @@ typedef struct _mgx_http_request {
 
     ~_mgx_http_request() {
         char *delete_res[] = {
-            request_line, request_head, reqeust_body, uri
+            request_line, request_head, request_body, uri
         };
         for (auto res: delete_res)
             if (res)
@@ -57,19 +63,23 @@ public:
 
     virtual bool init();
     virtual void th_msg_process_func(char *buf);
-    virtual void _wait_request_handler(pmgx_conn_t c);
+    virtual void _read_request_handler(pmgx_conn_t c);
 
 private:
-    std::string index_path;
+    std::string m_index_path;
+    std::unordered_map<std::string, const char *> m_mime_types;
 
-    int http_read_request_line(pmgx_conn_t c, pmgx_http_request_t phttp_req);
-    int http_parse_request_line(pmgx_http_request_t phttp_req);
-    int http_read_request_head(pmgx_conn_t c, pmgx_http_request_t phttp_req);
-    int http_parse_request_head(pmgx_http_request_t phttp_req);
-    int http_read_request_body(pmgx_conn_t c, pmgx_http_request_t phttp_req);
+    ssize_t http_read_request_line(pmgx_conn_t c, pmgx_http_request_t phttp_req);
+    bool    http_parse_request_line(pmgx_http_request_t phttp_req);
+    ssize_t http_read_request_head(pmgx_conn_t c, pmgx_http_request_t phttp_req);
+    bool    http_parse_request_head(pmgx_http_request_t phttp_req);
+    ssize_t http_read_request_body(pmgx_conn_t c, pmgx_http_request_t phttp_req);
 
     int http_write_response(pmgx_http_response_t phttp_res, pmgx_msg_hdr_t pmsg_hdr);
 
+    void mime_types_init();
+    const char *get_mime_type(const char *extension);
+    const char *get_extension(const char *path);
     int read_file_all(const char *file_path, std::string &buf);
 };
 
