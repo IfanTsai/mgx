@@ -79,6 +79,7 @@ typedef struct {
     uint64_t    cur_seq;
 #ifdef USE_HTTP
     uint        http_method;
+    char*       uri;
 #endif
     // ...
 } mgx_msg_hdr_t, *pmgx_msg_hdr_t;
@@ -163,10 +164,10 @@ private:
 
     /* mgx_socket_request.cpp */
     void send_msg_handler(pmgx_conn_t c);
-    virtual void _wait_request_handler(pmgx_conn_t c);
-    void wait_request_handler(pmgx_conn_t c);
-    void wait_request_handler_process_v1(pmgx_conn_t c);  /* process package header */
-    void wait_request_handler_process_v2(pmgx_conn_t c);  /* process package body */
+    virtual void _read_request_handler(pmgx_conn_t c);
+    void read_request_handler(pmgx_conn_t c);
+    void read_request_handler_process_v1(pmgx_conn_t c);  /* process package header */
+    void read_request_handler_process_v2(pmgx_conn_t c);  /* process package body */
 
     /* mgx_socket_time.cpp */
     void heart_timer_init();
