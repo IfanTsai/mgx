@@ -87,7 +87,9 @@ void Mgx_socket::monitor_timer_th_func()
                 }
             }
         }
-        usleep(200 * 1000);
+        cur_time = time(nullptr);
+        long sleep_time_us = (m_timer_que_head_time - cur_time) * 1000 * 1000;
+        usleep(sleep_time_us > 0 ? sleep_time_us : 200 * 1000);
     }
 }
 
