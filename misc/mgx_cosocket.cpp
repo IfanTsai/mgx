@@ -15,6 +15,10 @@ int Mgx_cosocket::set_socket_opt(int sockfd)
     }
 
     int opt = 1;
+    ret = setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+    if (ret < 0)
+        ::close(sockfd);
+
     ret = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (ret < 0)
         ::close(sockfd);
@@ -62,7 +66,7 @@ int Mgx_cosocket::accept(struct sockaddr *addr, socklen_t *addrlen)
         if (EAGAIN == errno) {
             co->set_wait_fd(m_sockfd);
             m_sch->add_event_wait_epoll(co, EPOLLIN);
-            co->yield(false);    
+            co->yield(false);
             m_sch->remove_event_wait_epoll(co);
         } else {
             return sockfd;
@@ -77,7 +81,7 @@ int Mgx_cosocket::accept(struct sockaddr *addr, socklen_t *addrlen)
 ssize_t Mgx_cosocket::recv(int sockfd, void *buf, size_t len, int flags)
 {
     Mgx_coroutine *co = m_sch->get_current_coroutine();
-    
+
     ssize_t ret = -1;
     for (;;) {
         ret = ::recv(sockfd, buf, len, flags);
@@ -85,7 +89,7 @@ ssize_t Mgx_cosocket::recv(int sockfd, void *buf, size_t len, int flags)
             if (EAGAIN == errno) {
                 co->set_wait_fd(sockfd);
                 m_sch->add_event_wait_epoll(co, EPOLLIN);
-                co->yield(false); 
+                co->yield(false);
                 m_sch->remove_event_wait_epoll(co);
             } else {
                 return ret;
@@ -101,7 +105,7 @@ ssize_t Mgx_cosocket::recv(int sockfd, void *buf, size_t len, int flags)
 ssize_t Mgx_cosocket::send(int sockfd, const void *buf, size_t len, int flags)
 {
     Mgx_coroutine *co = m_sch->get_current_coroutine();
-    
+
     ssize_t ret = -1;
     for (;;) {
         ret = ::send(sockfd, buf, len, flags);
@@ -110,7 +114,7 @@ ssize_t Mgx_cosocket::send(int sockfd, const void *buf, size_t len, int flags)
         if (EAGAIN == errno) {
             co->set_wait_fd(sockfd);
             m_sch->add_event_wait_epoll(co, EPOLLOUT);
-            co->yield(false);    
+            co->yield(false);
             m_sch->remove_event_wait_epoll(co);
         } else {
             return ret;
