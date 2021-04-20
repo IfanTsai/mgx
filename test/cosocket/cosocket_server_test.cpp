@@ -1,5 +1,7 @@
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <cstdlib>
+#include <cmath>
 #include "mgx_conf.h"
 #include "mgx_log.h"
 #include "mgx_cosocket.h"
@@ -59,7 +61,7 @@ void server(void *arg)
         conn_cnt++;
         if (1000 == conn_cnt) {
             long t2 = sch->get_now_ms();
-            printf("t2 - t1 = %ldms\n", t2 - t1);
+            printf("%ld: t2 - t1 = %ldms\n", gettid(), t2 - t1);
             conn_cnt = 0;
             t1 = sch->get_now_ms();
         }
@@ -78,7 +80,21 @@ int main(int argc, char *argv[])
 
     mgx_log_init();
 
-    new Mgx_coroutine(server, (void *)0);  // delete by scheduler when coroutine function run finished 
+#if 1
+    /* fork the same number of processes as CPUs */
+    int nr_cpu  = sysconf(_SC_NPROCESSORS_CONF);
+    for (int i = 0; pow(2, i) < nr_cpu; i++)
+        fork();
+
+    /* set process affinity */
+    pid_t pid = syscall(SYS_gettid);
+    cpu_set_t mask;
+    CPU_ZERO(&mask);
+    CPU_SET(pid % nr_cpu, &mask);
+    sched_setaffinity(0, sizeof(mask), &mask);
+#endif
+
+    new Mgx_coroutine(server, (void *)0);  // delete by scheduler when coroutine function run finished
     for (;;) {
         Mgx_coroutine_scheduler::get_instance()->schedule();
     }
