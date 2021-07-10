@@ -15,8 +15,15 @@ Mgx_coroutine::Mgx_coroutine(co_func_t func, void *arg)
     stack[-1] = nullptr;
 
     m_ctx = new mgx_ctx_t;
+#ifdef __x86_64__
     m_ctx->rsp = static_cast<void *>(stack) - (sizeof(void *) * 2);
     m_ctx->rip = (void *) _exec;
+#elif __aarch64__
+    m_ctx->sp = static_cast<void *>(stack) - (sizeof(void *) * 2);
+    m_ctx->x30 = (void *) _exec;
+#else
+    #error "Not implement in this architecure yet !"
+#endif
 
     Mgx_coroutine::cnt++;
     m_id = Mgx_coroutine::cnt;
@@ -49,27 +56,55 @@ void Mgx_coroutine::_exec(void *arg)
  */
 void Mgx_coroutine::_switch(mgx_ctx_t *cur_ctx, mgx_ctx_t *new_ctx)
 {
-    __asm__ (
-    "       movq %rsp, 0(%rsi)      # save stack pointer     \n"
-    "       movq %rbp, 8(%rsi)      # save frame pointer     \n"
-    "       movq (%rsp), %rax                                \n"
-    "       movq %rax, 16(%rsi)     # save pc pointer        \n"
-    "       movq %rbx, 24(%rsi)     # save rbx, r12-r15      \n"
-    "       movq %r12, 32(%rsi)                              \n"
-    "       movq %r13, 40(%rsi)                              \n"
-    "       movq %r14, 48(%rsi)                              \n"
-    "       movq %r15, 56(%rsi)                              \n"
-    "       movq 56(%rdx), %r15                              \n"
-    "       movq 48(%rdx), %r14                              \n"
-    "       movq 40(%rdx), %r13     # restore rbx, r12-r15   \n"
-    "       movq 32(%rdx), %r12                              \n"
-    "       movq 24(%rdx), %rbx                              \n"
-    "       movq 8(%rdx), %rbp      # restore frame pointer  \n"
-    "       movq 0(%rdx), %rsp      # restore stack pointer  \n"
-    "       movq 16(%rdx), %rax     # restore pc pointer     \n"
-    "       movq %rax, (%rsp)       # pc pointer push stack  \n"
-    "       ret                                              \n"
+#ifdef __x86_64__
+    __asm__ __volatile__ (
+    "       movq %rsp, 0(%rsi)          \n"    // save stack pointer
+    "       movq %rbp, 8(%rsi)          \n"    // save frame pointer
+    "       movq (%rsp), %rax           \n"
+    "       movq %rax, 16(%rsi)         \n"    // save pc pointer
+    "       movq %rbx, 24(%rsi)         \n"    // save rbx, r12 - r15
+    "       movq %r12, 32(%rsi)         \n"
+    "       movq %r13, 40(%rsi)         \n"
+    "       movq %r14, 48(%rsi)         \n"
+    "       movq %r15, 56(%rsi)         \n"
+    "       movq 56(%rdx), %r15         \n"
+    "       movq 48(%rdx), %r14         \n"
+    "       movq 40(%rdx), %r13         \n"    // restore rbx, r12 - r15
+    "       movq 32(%rdx), %r12         \n"
+    "       movq 24(%rdx), %rbx         \n"
+    "       movq 8(%rdx), %rbp          \n"    // restore frame pointer 
+    "       movq 0(%rdx), %rsp          \n"    // restore stack pointer
+    "       movq 16(%rdx), %rax         \n"    // restore pc pointer
+    "       movq %rax, (%rsp)           \n"    // push pc pointer in stack
+    "       ret                           "
     );
+#elif __aarch64__
+    __asm__ __volatile__ (
+    "       mov x10, sp                 \n"
+    "       str x10, [%1]               \n"    // save stack pointer
+    "       stp x29, x30, [%1, #8]      \n"    // save frame pointer and link register
+    "       stp x19, x20, [%1, #24]     \n"    // save x19 - x28
+    "       stp x21, x22, [%1, #40]     \n"
+    "       stp x23, x24, [%1, #56]     \n"
+    "       stp x25, x26, [%1, #72]     \n"
+    "       stp x27, x28, [%1, #88]     \n"
+    "       ldp x27, x28, [%2, #88]     \n"    // resotre x19 - x28
+    "       ldp x25, x26, [%2, #72]     \n"
+    "       ldp x23, x24, [%2, #56]     \n"
+    "       ldp x21, x22, [%2, #40]     \n"
+    "       ldp x19, x20, [%2, #24]     \n"
+    "       ldp x29, x30, [%2, #8]      \n"    // restore frame pointer and link register
+    "       ldr x10, [%2]               \n"
+    "       mov sp, x10                 \n"    // restore stack pointer
+    "       mov x0, %0                  \n"
+    "       mov x1, %0                  \n"
+    "       ret                           "    // b x30(lr)
+    :
+    : "r"(this), "r"(cur_ctx), "r"(new_ctx)
+    :);
+#else
+    #error "Not implement in this architecure yet !"
+#endif
 }
 
 void Mgx_coroutine::yield(bool push_ready_list)
