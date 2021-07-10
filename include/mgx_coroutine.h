@@ -17,6 +17,7 @@
 #define MGX_CO_SCHEDULER_EPOLL_WAIT_TIMEOUT (200)
 
 typedef struct {
+#ifdef __x86_64__
     void *rsp;
     void *rbp;
     void *rip;
@@ -25,6 +26,23 @@ typedef struct {
     void *r13;
     void *r14;
     void *r15;
+#elif __aarch64__
+    void *sp;
+    void *x29; // fp
+    void *x30; // lr
+    void *x19;
+    void *x20;
+    void *x21;
+    void *x22;
+    void *x23;
+    void *x24;
+    void *x25;
+    void *x26;
+    void *x27;
+    void *x28;
+#else
+    #error "Not implement in this architecture yet !"
+#endif
 } mgx_ctx_t;
 
 enum class COROUTINE_STATUS {
