@@ -8,11 +8,11 @@ all:
 
 PHONY += clean
 clean:
-	rm -f $(shell find -name "*.o") mgx
+	rm -f $(shell find -name "*.o") $(BIN)
 
 PHONY += distclean
 distclean:
-	rm -f $(shell find -name "*.o") mgx
+	rm -f $(shell find -name "*.o") $(BIN)
 	rm -f $(shell find -name "*.d")
 
 .PHONY: $(PHONY)

@@ -2,6 +2,8 @@ export BUILD_ROOT = $(shell pwd)
 
 export INCLUDE_PATH = $(BUILD_ROOT)/include
 
+export BIN = mgx
+
 BUILD_DIR = $(BUILD_ROOT)/signal/  \
 			$(BUILD_ROOT)/net/ \
 			$(BUILD_ROOT)/process/ \
