@@ -25,12 +25,12 @@ By default, the source code is configured to **http** mode. If you need to confi
 export USE_HTTP = false
 ```
 
-- Implementation of tcp mode in subprocess [Mgx_logic_socket](./bussiness/mgx_logic_socket.cpp)
-- Implementation of http mode in subprocess [Mgx_http_socket](./http/mgx_http_socket.cpp)
+- Implementation of tcp mode in subclass [Mgx_logic_socket](./bussiness/mgx_logic_socket.cpp)
+- Implementation of http mode in subclass [Mgx_http_socket](./http/mgx_http_socket.cpp)
 
 
 
-In addition, this project also implements a coroutine library, and implements a set of cosockets based on this coroutine library, but note that it's not integrated into above framework. You can see their use in the test directory.
+In addition, this project also implements a coroutine library, and implements a set of cosocket's APIs based on this coroutine library, but note that it's not integrated into above framework. You can see their use in the test directory.
 
 Mainly realize code:
 
@@ -38,6 +38,7 @@ Mainly realize code:
 - [coroutine schedule](./misc/mgx_coroutine_scheduler.cpp)
 - [cosocket](./misc/mgx_cosocket.cpp)
 
+Note: The coroutine library currently only implements x86-64 and ARM64 platforms
 
 ### The general structure of Mgx
 ![](https://img.caiyifan.cn/mgx_structure_new.jpg)

@@ -24,17 +24,19 @@
 export USE_HTTP = false
 ```
 
-- tcp 模式实现在子进程 [Mgx_logic_socket](./bussiness/mgx_logic_socket.cpp)
-- http 模式实现在子进程 [Mgx_http_socket](./http/mgx_http_socket.cpp)
+- tcp 模式实现在子类 [Mgx_logic_socket](./bussiness/mgx_logic_socket.cpp)
+- http 模式实现在子类 [Mgx_http_socket](./http/mgx_http_socket.cpp)
 
 
-另外，本项目也实现了一个协程库，并且基于该协程库实现了一套 cosocket, 但是注意并未整合进代码框架中。你可以在 test 目录下看到他们的用法
+另外，本项目也实现了一个协程库，并且基于该协程库实现了一套 cosocket 的接口, 但是注意并未整合进代码框架中。你可以在 test 目录下看到他们的用法
 
 主要的实现代码:
 
 - [coroutine](./misc/mgx_coroutine.cpp)
 - [coroutine schedule](./misc/mgx_coroutine_scheduler.cpp)
 - [cosocket](./misc/mgx_cosocket.cpp)
+
+注：该协程库目前只实现了 x86-64 和 ARM64 平台
 
 
 ### Mgx 的架构简图
