@@ -15,7 +15,7 @@ struct ser_cli_pair {
 
 void server_reader(void *arg)
 {
-    ser_cli_pair *pair = (ser_cli_pair *) arg;
+    ser_cli_pair *pair = arg;
     Mgx_cosocket *sock = pair->ser_sock;
     int fd = pair->cli_fd;
     delete pair;

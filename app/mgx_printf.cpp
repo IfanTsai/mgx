@@ -5,20 +5,19 @@ static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
                                u_char zero, uintptr_t hexadecimal,
                                uintptr_t width)
 {
-    u_char *p, temp[NGX_INT64_LEN + 1];
+    u_char *p, temp[MGX_INT64_LEN + 1];
     /*
-     * we need temp[NGX_INT64_LEN] only,
+     * we need temp[MGX_INT64_LEN] only,
      * but icc issues the warning
      */
     size_t len;
-    uint32_t ui32;
     static u_char hex[] = "0123456789abcdef";
     static u_char HEX[] = "0123456789ABCDEF";
 
-    p = temp + NGX_INT64_LEN;
+    p = temp + MGX_INT64_LEN;
 
     if (hexadecimal == 0) {
-        if (ui64 <= (uint64_t)NGX_MAX_UINT32_VALUE) {
+        if (ui64 <= (uint64_t)MGX_MAX_UINT32_VALUE) {
             /*
              * To divide 64-bit numbers and to find remainders
              * on the x86 platform gcc and icc call the libc functions
@@ -34,7 +33,7 @@ static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
              *     (i32 * 0xCCCCCCCD) >> 35
              */
 
-            ui32 = (uint32_t)ui64;
+            uint32_t ui32 = (uint32_t)ui64;
 
             do {
                 *--p = (u_char)(ui32 % 10 + '0');
@@ -64,7 +63,7 @@ static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
 
     /* zero or space padding */
 
-    len = (temp + NGX_INT64_LEN) - p;
+    len = (temp + MGX_INT64_LEN) - p;
 
     while (len++ < width && buf < last) {
         *buf++ = zero;
@@ -72,7 +71,7 @@ static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
 
     /* number safe copy */
 
-    len = (temp + NGX_INT64_LEN) - p;
+    len = (temp + MGX_INT64_LEN) - p;
 
     if (buf + len > last) {
         len = last - buf;
@@ -163,7 +162,7 @@ u_char *mgx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args)
                         }
 
                     } else {
-                        len = ngx_min(((size_t)(last - buf)), slen);
+                        len = mgx_min(((size_t)(last - buf)), slen);
                         buf = memcpy_end(buf, p, len);
                     }
 
@@ -352,5 +351,6 @@ u_char *mgx_slprintf(u_char *buf, u_char *last, const char *fmt, ...)
     va_start(args, fmt);
     buf = mgx_vslprintf(buf, last, fmt, args);
     va_end(args);
+
     return buf;
 }

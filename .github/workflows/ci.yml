@@ -1,0 +1,60 @@
+name: Run cppcheck and build test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  lint:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install cppcheck
+        run: |
+            sudo apt update
+            sudo apt install -y cppcheck
+
+      - name: Run cppcheck
+        run: cppcheck --enable=style --error-exitcode=2 --std=c++17 -v .
+
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up C++ env
+      run: |
+          sudo apt update
+          sudo apt install -y g++ make
+
+    - name: build and run
+      run: |
+          set -ex
+          make distclean
+          sed -i "s/DEBUG = true/DEBUG = false/g" config.mk
+          make -j$(cat /proc/cpuinfo | grep "processor" | wc -l)
+          ls -lh ./mgx
+          sed -i "s/Daemon = 0/Daemon = 1/g" mgx.conf
+          ./mgx
+          curl -i 127.0.0.1:8081
+          ./kill.sh
+
+  docker-build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: build image
+      run: |
+        docker build -t mgx:$IMAGE_TAG .

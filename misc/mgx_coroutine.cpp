@@ -16,10 +16,10 @@ Mgx_coroutine::Mgx_coroutine(co_func_t func, void *arg)
 
     m_ctx = new mgx_ctx_t;
 #ifdef __x86_64__
-    m_ctx->rsp = static_cast<void *>(stack) - (sizeof(void *) * 2);
+    m_ctx->rsp = static_cast<char *>(static_cast<void *>(stack)) - (sizeof(char *) * 2);
     m_ctx->rip = (void *) _exec;
 #elif __aarch64__
-    m_ctx->sp = static_cast<void *>(stack) - (sizeof(void *) * 2);
+    m_ctx->sp = static_cast<char *>(stack) - (sizeof(char *) * 2);
     m_ctx->x30 = (void *) _exec;
 #else
     #error "Not implement in this architecure yet !"

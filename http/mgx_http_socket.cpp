@@ -123,11 +123,10 @@ void Mgx_http_socket::th_msg_process_func(char *buf)
 
 ssize_t Mgx_http_socket::http_read_request_line(pmgx_conn_t c, pmgx_http_request_t phttp_req)
 {
-    ssize_t recv_size;
     ssize_t len = 0;
     char ch;
     for (;;) {
-        recv_size = recv_process(c, &ch, 1);
+        ssize_t recv_size = recv_process(c, &ch, 1);
         if (recv_size <= 0)
             return recv_size;
         if (ch == CR) {
@@ -178,11 +177,10 @@ bool Mgx_http_socket::http_parse_request_line(pmgx_http_request_t phttp_req)
 
 ssize_t Mgx_http_socket::http_read_request_head(pmgx_conn_t c, pmgx_http_request_t phttp_req)
 {
-    ssize_t recv_size;
     ssize_t len = 0;
     char ch;
     for (;;) {
-        recv_size = recv_process(c, &ch, 1);
+        ssize_t recv_size = recv_process(c, &ch, 1);
         if (recv_size <= 0)
             return recv_size;
         if (ch == CR) {
@@ -238,9 +236,9 @@ ssize_t Mgx_http_socket::http_read_request_body(pmgx_conn_t c, pmgx_http_request
 
     phttp_req->request_body = new char[content_len + 1]();
 
-    ssize_t recv_size, off = 0;
+    ssize_t off = 0;
     while (off < content_len) {
-        recv_size = recv_process(c, phttp_req->request_body + off, content_len - off);
+        ssize_t recv_size = recv_process(c, phttp_req->request_body + off, content_len - off);
         if (recv_size <= 0)
             return recv_size;
         off += recv_size;

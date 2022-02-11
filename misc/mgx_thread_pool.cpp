@@ -19,14 +19,12 @@ Mgx_th_pool::~Mgx_th_pool()
 
 bool Mgx_th_pool::create(int th_cnt)
 {
-    int err;
-
     m_th_cnt = th_cnt;
     for (int i = 0; i < m_th_cnt; i++) {
         Mgx_thread *thread = new Mgx_thread(std::bind(&Mgx_th_pool::th_func, this),
                                             "mgx_th_pool_" + std::to_string(i));
         m_threads.emplace_back(std::move(thread));
-        err = m_threads[i]->start();
+        int err = m_threads[i]->start();
         if (err != 0) {
             mgx_log(MGX_LOG_STDERR, "thread pool %d create error: %s", i, strerror(err));
             return false;
@@ -45,10 +43,9 @@ bool Mgx_th_pool::create(int th_cnt)
 
 void Mgx_th_pool::th_func()
 {
-    int err;
     char *msg_buf = nullptr;
     for (;;) {
-        err = pthread_mutex_lock(&m_mutex);   /* lock */
+        int err = pthread_mutex_lock(&m_mutex);   /* lock */
         if (err != 0)
             mgx_log(MGX_LOG_STDERR, "pthread_mutex_lock error: %s", strerror(err));
 
