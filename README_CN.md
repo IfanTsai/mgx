@@ -38,6 +38,27 @@ export USE_HTTP = false
 
 注：该协程库目前只实现了 x86-64 和 ARM64 平台
 
+### 快速开始
+
+在主机中运行
+
+```bash
+make -j4
+./mgx
+curl 127.0.0.1:8081  # or view web page in browser
+```
+
+使用 docker 运行
+```bash
+docker build -t mgx:latest .
+docker run -itd -p 8081:8081 mgx:latest
+curl 127.0.0.1:8081  # or view web page in browser
+```
+
+你可以在浏览器中访问 http://127.0.0.1:8081.
+
+![image-20220211203019092](https://img.caiyifan.cn/typora_picgo/image-20220211203019092.png) 
+
 
 ### Mgx 的架构简图
 ![](https://img.caiyifan.cn/mgx_structure_new.jpg)
