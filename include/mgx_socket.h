@@ -27,10 +27,10 @@
 class Mgx_socket;
 
 enum class EPOLL_ES_MOD_ACTION {
-	FULL_COVERAGE = -1,
-	REMOVE,
-	ADD,
-	IGNORE,
+    FULL_COVERAGE = -1,
+    REMOVE,
+    ADD,
+    IGNORE,
 };
 
 typedef struct _mgx_conn mgx_conn_t, *pmgx_conn_t;

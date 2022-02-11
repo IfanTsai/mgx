@@ -7,6 +7,8 @@
 
 int g_pid = getpid();
 
+#define USE_COROUTINE_SCHEDULER
+
 #define DEFINE_FUNC(NUM)   \
     void func##NUM(void *arg)  \
     {  \
@@ -38,24 +40,30 @@ int main(int argc, char *argv[])
     }
     mgx_log_init();
 
-    std::vector<Mgx_coroutine *> vc;    
-
+#ifdef USE_COROUTINE_SCHEDULER
+    new Mgx_coroutine(func1, (void *)"1111");
+    new Mgx_coroutine(func2, (void *)"2222");
+    new Mgx_coroutine(func3, (void *)"3333");
+    new Mgx_coroutine(func4, (void *)"4444");
+    new Mgx_coroutine(func5, (void *)"5555");
+#else
     Mgx_coroutine *co1 = new Mgx_coroutine(func1, (void *)"1111");
     Mgx_coroutine *co2 = new Mgx_coroutine(func2, (void *)"2222");
     Mgx_coroutine *co3 = new Mgx_coroutine(func3, (void *)"3333");
     Mgx_coroutine *co4 = new Mgx_coroutine(func4, (void *)"4444");
     Mgx_coroutine *co5 = new Mgx_coroutine(func5, (void *)"5555");
+#endif
 
     for (;;) {
-        #if 0
+#ifdef USE_COROUTINE_SCHEDULER
+        Mgx_coroutine_scheduler::get_instance()->schedule();
+#else
         co1 && !co1->resume() && (co1 = nullptr);
         co2 && !co2->resume() && (co2 = nullptr);
         co3 && !co3->resume() && (co3 = nullptr);
         co4 && !co4->resume() && (co4 = nullptr);
         co5 && !co5->resume() && (co5 = nullptr);
-        #else
-        Mgx_coroutine_scheduler::get_instance()->schedule();
-        #endif
+#endif
     }
     return 0;
 }

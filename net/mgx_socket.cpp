@@ -69,11 +69,10 @@ bool Mgx_socket::open_listen_skts()
     seraddr.sin_family = AF_INET;
     seraddr.sin_addr.s_addr = /*inet_addr(INADDR_ANY)*/ htonl(INADDR_ANY);
 
-    int listenfd, listen_port;
     char buf[1024] = { 0 };
     for (int i = 0; i < m_listen_cnt; i++) {
         /* socket */
-        listenfd = socket(AF_INET, SOCK_STREAM, 0);
+        int listenfd = socket(AF_INET, SOCK_STREAM, 0);
         if (listenfd < 0) {
             mgx_log(MGX_LOG_STDERR, "socket %d error: %s", i, strerror(errno));
             return false;
@@ -95,7 +94,7 @@ bool Mgx_socket::open_listen_skts()
         set_nonblock(listenfd);  /* set socket io nonblock*/
 
         sprintf(buf, CONFIG_ListenPort"%d", i);
-        listen_port = mgx_conf->get_int(buf, DEFAULT_LISTEN_PORT);  /* get listen port*/
+        int listen_port = mgx_conf->get_int(buf, DEFAULT_LISTEN_PORT);  /* get listen port*/
         seraddr.sin_port = htons(listen_port);
 
         /* bind */
@@ -383,9 +382,8 @@ void Mgx_socket::send_msg_th_func()
 
 ssize_t Mgx_socket::send_uninterrupt(pmgx_conn_t c, char *buf, ssize_t size)
 {
-    ssize_t n;
     for (;;) {
-        n = send(c->fd, buf, size, 0);
+        ssize_t n = send(c->fd, buf, size, 0);
         if (n >= 0)
             return n;
         else if (errno == EAGAIN)

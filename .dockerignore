@@ -1,0 +1,11 @@
+log/*
+tags
+.clang-format
+.ccls-cache
+.git
+compile_commands.json
+.vscode
+**/*.o
+**/mgx
+core
+cscope*

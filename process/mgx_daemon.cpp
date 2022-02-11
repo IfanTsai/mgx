@@ -43,5 +43,6 @@ int mgx_daemon()
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
     close(fd);
+
     return 0;
 }
