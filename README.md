@@ -4,7 +4,7 @@
 
 The framework doesn't depend on any third party components
 
-### The framework mainly realizes the following points
+### The framework mainly implements the following features
 
 - a master process and multiple subprocesses(worker processes)
     - the master process is responsible for signal processing
@@ -40,5 +40,27 @@ Mainly realize code:
 
 Note: The coroutine library currently only implements x86-64 and ARM64 platforms
 
+### Quick Start
+
+start in host machine
+
+```bash
+make -j4
+./mgx
+curl 127.0.0.1:8081  # or view web page in browser
+```
+
+start in docker
+```bash
+docker build -t mgx:latest .
+docker run -itd -p 8081:8081 mgx:latest
+curl 127.0.0.1:8081  # or view web page in browser
+```
+
+You can access http://127.0.0.1:8081 to view the web page in browser
+
+![image-20220211203019092](https://img.caiyifan.cn/typora_picgo/image-20220211203019092.png) 
+
 ### The general structure of Mgx
+
 ![](https://img.caiyifan.cn/mgx_structure_new.jpg)
