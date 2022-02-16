@@ -29,8 +29,8 @@ void mgx_conn_t::put_one_to_free()
     }
 
     if (psend_mem_addr) {
-        delete[] precv_mem_addr;
-        precv_mem_addr = nullptr;
+        delete[] psend_mem_addr;
+        psend_mem_addr = nullptr;
     }
 }
 

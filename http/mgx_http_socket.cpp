@@ -69,6 +69,8 @@ void Mgx_http_socket::_read_request_handler(pmgx_conn_t c)
     }
 
     g_mgx_th_pool.insert_msg_to_queue_and_signal(c->precv_mem_addr);
+
+    c->precv_mem_addr = nullptr;
 }
 
 void Mgx_http_socket::th_msg_process_func(char *buf)
