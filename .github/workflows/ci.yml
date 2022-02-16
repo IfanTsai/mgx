@@ -47,7 +47,7 @@ jobs:
           ./kill.sh
 
   docker-build-test:
-    name: Build Test
+    name: Docker Build Test
     runs-on: ubuntu-latest
     env:
       IMAGE_TAG: ${{ github.sha }}
@@ -58,3 +58,7 @@ jobs:
     - name: build image
       run: |
         docker build -t mgx:$IMAGE_TAG .
+    - name : run image
+      run: |
+        docker run -itd -p 8081:8081 mgx:$IMAGE_TAG
+        curl -i 127.0.0.1:8081
