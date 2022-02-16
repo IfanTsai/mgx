@@ -1,0 +1,52 @@
+name: Run benchmark tests
+
+on:
+  schedule:
+    - cron: '10 16 * * *' # 0:10 CST
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  benchmark:
+    name: Benchmark Test
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Install wrk
+      run: |
+        sudo apt install -y build-essential libssl-dev git
+        git clone https://github.com/wg/wrk.git
+        cd wrk
+        make -j$(cat /proc/cpuinfo | grep "processor" | wc -l)
+        sudo cp wrk /usr/local/bin
+        which wrk
+
+    - uses: actions/checkout@v2
+
+    - name: Set up C++ env
+      run: |
+        sudo apt update
+        sudo apt install -y g++ make
+
+    - name: Build and run
+      run: |
+        set -ex
+        export cpu_num=$(cat /proc/cpuinfo | grep "processor" | wc -l)
+        make distclean
+        sed -i "s/DEBUG = true/DEBUG = false/g" config.mk
+        make -j${cpu_num}
+        ls -lh ./mgx
+        sed -i "s/Daemon = 0/Daemon = 1/g" mgx.conf
+        sed -i "s/LogLevel = 8/LogLevel = 5/g" mgx.conf
+        sed -i "s/DebugMode = 1/DebugMode = 0/g" mgx.conf
+        sed -i "s/Heartbeat = 1/Heartbeat = 0/g" mgx.conf
+        sed -i "s/RecyConnectionWaitTime = 10/RecyConnectionWaitTime = 3/g" mgx.conf
+        sed -i "s/WorkerProcesses = 4/WorkerProcesses = ${cpu_num}/g" mgx.conf
+        ./mgx
+
+    - name: Run wrk
+      run: |
+        wrk -t8 -c1000 -d30s --latency http://127.0.0.1:8081
