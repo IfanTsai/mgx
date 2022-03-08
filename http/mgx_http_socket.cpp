@@ -2,8 +2,7 @@
 #include "mgx_thread_pool.h"
 #include "mgx_string.h"
 #include "mgx_conf.h"
-#include <fstream>
-#include <sstream>
+#include "mgx_file.h"
 
 extern Mgx_th_pool g_mgx_th_pool;
 
@@ -78,6 +77,7 @@ void Mgx_http_socket::th_msg_process_func(char *buf)
     pmgx_msg_hdr_t pmsg_hdr = (pmgx_msg_hdr_t)buf;
     const char *request_body = buf + m_msg_hdr_size;
     char *uri = pmsg_hdr->uri;
+    int fd = -1;
 
     mgx_http_response_t http_res;
     http_res.headers["Server"] = "Mgx http server";
@@ -87,15 +87,22 @@ void Mgx_http_socket::th_msg_process_func(char *buf)
         if (!strcmp(uri, "/"))
             static_file_path += "index.html";
 
-        if (!access(static_file_path.c_str(), F_OK)) {
-            std::string res_body;
-            read_file_all(static_file_path.c_str(), res_body);
+        fd = open(static_file_path.c_str(), O_RDONLY);
+        if (fd >= 0) {
+            ssize_t file_size = get_file_size(fd);
+            if (file_size < 0) {
+                mgx_log(MGX_LOG_ERR, "get file %s size error: %s", static_file_path.c_str(), strerror(errno));
+                goto out;
+            }
 
             http_res.status_line = "HTTP/1.1 " HTTP_STATUS_LINE(200);
             http_res.headers["Content-Type"] = get_mime_type(get_extension(uri));
-            http_res.headers["Content-Length"] = std::to_string(res_body.size()).c_str();
-            http_res.response_body = new char[res_body.size() + 1]();
-            memcpy(http_res.response_body, res_body.c_str(), res_body.size());
+            http_res.headers["Content-Length"] = std::to_string(file_size);
+            http_res.response_body = new char[file_size + 1]();
+            if (must_read(fd, http_res.response_body, file_size) < 0) {
+                mgx_log(MGX_LOG_ERR, "read file %s error: %s", static_file_path.c_str(), strerror(errno));
+                goto out;
+            }
         } else {
             std::string res_body;
             if (strcmp(uri, "/favicon.ico"))
@@ -103,7 +110,7 @@ void Mgx_http_socket::th_msg_process_func(char *buf)
 
             http_res.status_line = "HTTP/1.1 " HTTP_STATUS_LINE(404);
             http_res.headers["Content-Type"] = "text/html; charset=UTF-8";
-            http_res.headers["Content-Length"] = std::to_string(res_body.size()).c_str();
+            http_res.headers["Content-Length"] = std::to_string(res_body.size());
             http_res.response_body = new char[res_body.size() + 1]();
             memcpy(http_res.response_body, res_body.c_str(), res_body.size());
         }
@@ -120,6 +127,9 @@ void Mgx_http_socket::th_msg_process_func(char *buf)
 
     http_write_response(&http_res, pmsg_hdr);
 
+out:
+    if (fd >= 0)
+        close(fd);
     delete[] uri;
 }
 
@@ -268,24 +278,6 @@ int Mgx_http_socket::http_write_response(pmgx_http_response_t phttp_res, pmgx_ms
     memcpy(psend_buf + m_msg_hdr_size, response.c_str(), response.size());
 
     send_msg(psend_buf);
-
-    return 0;
-}
-
-int Mgx_http_socket::read_file_all(const char *file_path, std::string &buf)
-{
-    std::ifstream is(file_path);
-    if (!is.is_open())
-        return -1;
-
-    std::ostringstream ss;
-    std::string tmp;
-    while (std::getline(is, tmp))
-        ss << tmp << std::endl;
-
-    is.close();
-
-    buf = ss.str();
 
     return 0;
 }
