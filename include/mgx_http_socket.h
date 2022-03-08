@@ -46,7 +46,7 @@ typedef struct _mgx_http_request {
 } mgx_http_request_t, *pmgx_http_request_t;
 
 typedef struct _mgx_http_response {
-    char *status_line;
+    const char *status_line;
     std::unordered_map<std::string, std::string> headers;
     char *response_body = nullptr;
     ~_mgx_http_response() {
@@ -80,7 +80,6 @@ private:
     void mime_types_init();
     const char *get_mime_type(const char *extension);
     const char *get_extension(const char *path);
-    int read_file_all(const char *file_path, std::string &buf);
 };
 
 #define HTTP_STATUS_LINE(CODE) HTTP_STATUS_LINE_##CODE
