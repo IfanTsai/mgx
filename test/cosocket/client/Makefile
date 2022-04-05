@@ -12,20 +12,21 @@ OBJDUMP     = $(CROSS_COMPILE)objdump
 
 CFLAGS := -Wall -O2 -std=c++11
 LDFLAGS := -rdynamic
-INCLUDE_PATH := ../../include/
+INCLUDE_PATH := ../../../include/
 
-BIN = cosocket_server_test
+BIN = cosocket_client_test
 
 all: $(BIN)
 
-LINK_OBJ = cosocket_server_test.o \
-	../../misc/mgx_coroutine.o \
-	../../misc/mgx_coroutine_scheduler.o \
-	../../misc/mgx_util.o \
-	../../misc/mgx_cosocket.o \
-	../../app/mgx_log.o \
-	../../app/mgx_printf.o \
-	../../app/mgx_conf.o \
+LINK_OBJ = cosocket_client_test.o \
+	../../../misc/mgx_coroutine.o \
+	../../../misc/mgx_coroutine_scheduler.o \
+	../../../misc/mgx_util.o \
+	../../../misc/mgx_cosocket.o \
+	../../../misc/mgx_io.o \
+	../../../app/mgx_log.o \
+	../../../app/mgx_printf.o \
+	../../../app/mgx_conf.o
 
 $(BIN): $(LINK_OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)

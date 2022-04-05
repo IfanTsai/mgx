@@ -9,8 +9,6 @@
 #include "mgx_printf.h"
 #include "mgx_string.h"
 
-extern int g_pid;
-
 const static int MGX_MAX_ERR_STR_SIZE = 10240;
 const static int MGX_MAX_LOG_STR_SIZE = MGX_MAX_ERR_STR_SIZE;
 const static char *STD_ERR_TAG = "mgx: ";
@@ -55,7 +53,7 @@ static void mk_pdirs(const char *fname)
 
     struct stat dstat;
     char *p = dirname;
-    while ( p = strchr(p + 1, '/') ) {
+    while ( (p = strchr(p + 1, '/')) ) {
         *p = 0;
         if (stat(dirname, &dstat)) {
             mkdir(dirname, 0755);
@@ -89,14 +87,15 @@ void mgx_log_init()
 
 void mgx_log(int level, const char *fmt, ...)
 {
-    if (level > g_mgx_log.log_level) return;
+    if (level > g_mgx_log.log_level)
+        return;
 
     char time_buf[64] = { 0 };
     get_cur_time_string("%04d-%02d-%02d %02d:%02d:%02d", time_buf);
 
     u_char log_str_buf[MGX_MAX_LOG_STR_SIZE] = { 0 };
     u_char *p = memcpy_end(log_str_buf, time_buf, strlen(time_buf));
-    p = mgx_slprintf(p, log_str_buf + MGX_MAX_LOG_STR_SIZE, " [%s] %d: ", log_tags[level], g_pid);
+    p = mgx_slprintf(p, log_str_buf + MGX_MAX_LOG_STR_SIZE, " [%s] %d: ", log_tags[level], getpid());
 
     va_list args;
     va_start(args, fmt);

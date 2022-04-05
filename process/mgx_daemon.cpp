@@ -8,8 +8,6 @@
 #include <errno.h>
 #include <cstdlib>
 
-extern int g_pid;
-
 int mgx_daemon()
 {
     pid_t pid = fork();
@@ -21,8 +19,6 @@ int mgx_daemon()
         return 1;
     }
 
-    g_pid = getpid();
-
     if (setsid() < 0) {
         mgx_log(MGX_LOG_EMERG, "setsid error: %s", strerror(errno));
         exit(1);
@@ -33,8 +29,6 @@ int mgx_daemon()
     /* let pid != sid, then never get the control terminal */
     // if (fork() != 0)
     //     return 1;
-
-    g_pid = getpid();
 
     for (int i = 0; i < 3; i++)
         close(i);
