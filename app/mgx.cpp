@@ -13,7 +13,6 @@
 #include "mgx_crc32.h"
 
 char **g_argv;
-int g_pid;
 bool g_is_mgx_master;
 Mgx_th_pool g_mgx_th_pool;
 
@@ -22,7 +21,6 @@ Mgx_socket *gp_mgx_socket;
 int main(int argc, char *argv[])
 {
     g_argv = argv;
-    g_pid = getpid();
 
     Mgx_conf *mgx_conf = Mgx_conf::get_instance();
     if (!mgx_conf->load("./mgx.conf")) {

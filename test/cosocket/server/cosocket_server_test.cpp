@@ -3,10 +3,9 @@
 #include <cstdlib>
 #include <cmath>
 #include "mgx_conf.h"
-#include "mgx_log.h"
 #include "mgx_cosocket.h"
 
-int g_pid;
+#define PORT 8081
 
 struct ser_cli_pair {
     Mgx_cosocket *ser_sock;
@@ -38,7 +37,7 @@ void server(void *arg)
     bzero(&seraddr, sizeof(seraddr));
     seraddr.sin_family = AF_INET;
     seraddr.sin_addr.s_addr = /*inet_addr(INADDR_ANY)*/ htonl(INADDR_ANY);
-    seraddr.sin_port = htons(8081);
+    seraddr.sin_port = htons(PORT);
 
     Mgx_cosocket *sock = new Mgx_cosocket();
     sock->socket(AF_INET, SOCK_STREAM, 0);
@@ -61,7 +60,7 @@ void server(void *arg)
         conn_cnt++;
         if (1000 == conn_cnt) {
             long t2 = sch->get_now_ms();
-            printf("%ld: t2 - t1 = %ldms\n", gettid(), t2 - t1);
+            printf("%d: t2 - t1 = %ldms\n", gettid(), t2 - t1);
             conn_cnt = 0;
             t1 = sch->get_now_ms();
         }
@@ -70,16 +69,6 @@ void server(void *arg)
 
 int main(int argc, char *argv[])
 {
-    g_pid = getpid();
-
-    Mgx_conf *mgx_conf = Mgx_conf::get_instance();
-    if (!mgx_conf->load("../../mgx.conf")) {
-        mgx_log_stderr("load config failed !!!");
-        exit(1);
-    }
-
-    mgx_log_init();
-
 #if 1
     /* fork the same number of processes as CPUs */
     int nr_cpu  = sysconf(_SC_NPROCESSORS_CONF);
@@ -94,7 +83,7 @@ int main(int argc, char *argv[])
     sched_setaffinity(0, sizeof(mask), &mask);
 #endif
 
-    new Mgx_coroutine(server, (void *)0);  // delete by scheduler when coroutine function run finished
+    new Mgx_coroutine(server, nullptr);  // delete by scheduler when coroutine function run finished
     for (;;) {
         Mgx_coroutine_scheduler::get_instance()->schedule();
     }

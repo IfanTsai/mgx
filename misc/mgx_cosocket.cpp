@@ -1,4 +1,10 @@
 #include "mgx_cosocket.h"
+#include "mgx_comm.h"
+#include "mgx_io.h"
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <poll.h>
 
 Mgx_cosocket::Mgx_cosocket()
 {
@@ -120,12 +126,52 @@ ssize_t Mgx_cosocket::send(int sockfd, const void *buf, size_t len, int flags)
             return ret;
         }
     }
+
     return ret;
 }
 
-int Mgx_cosocket::connect(const struct sockaddr *addr, socklen_t addrlen)
+//#define CONNECT_TIMEOUT_SELECT
+//#define CONNECT_TIMEOUT_POLL
+
+int Mgx_cosocket::connect(const struct sockaddr *addr, socklen_t addrlen, unsigned long timeout)
 {
-    return ::connect(m_sockfd, addr, addrlen);
+    int ret = ::connect(m_sockfd, addr, addrlen);
+    /*
+     * when call connect() on a non-blocking socket,
+     * get EINPROGRESS instead of EAGIN before connection handshake completed.
+     */
+    if (EINPROGRESS != errno)
+        return ret;
+
+    Mgx_coroutine *co = m_sch->get_current_coroutine();
+    if (timeout == 0) {
+        co->set_wait_fd(m_sockfd);
+        m_sch->add_event_wait_epoll(co, EPOLLOUT);
+        co->yield(false);
+        m_sch->remove_event_wait_epoll(co);
+    } else {
+#if defined(CONNECT_TIMEOUT_SELECT)
+        ret = mgx_select(m_sockfd, false, true, timeout);
+#elif defined(CONNECT_TIMEOUT_POLL)
+        ret = mgx_poll(m_sockfd, false, true, timeout);
+#else
+        co->msleep(timeout);
+        ret = mgx_select(m_sockfd, false, true, 0);
+#endif
+        if (ret == 0)
+            goto _timeout;
+        else if (ret < 0)
+            return ret;
+    }
+
+    ::getsockopt(m_sockfd, SOL_SOCKET, SO_ERROR, &ret, (socklen_t *)&addrlen);
+    if (ret == 0)
+        return 0;
+
+_timeout:
+    errno = ETIMEDOUT;
+
+    return -1;
 }
 
 ssize_t Mgx_cosocket::recv(void *buf, size_t len, int flags)

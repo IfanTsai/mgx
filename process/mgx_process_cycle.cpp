@@ -12,7 +12,6 @@
 #include "mgx_thread_pool.h"
 
 extern char **g_argv;
-extern int g_pid;
 extern bool g_is_mgx_master;
 extern Mgx_socket *gp_mgx_socket;
 extern Mgx_th_pool g_mgx_th_pool;
@@ -49,7 +48,7 @@ static void mgx_worker_process_cycle(int worker_nr, const char *process_name)
 
     mgx_worker_process_init(worker_nr);
     mgx_setproctitle(process_name);
-    mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", process_name, g_pid);
+    mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", process_name, getpid());
 
     for (;;) {
         gp_mgx_socket->epoll_process_events(-1);
@@ -66,7 +65,6 @@ static inline void mgx_spawn_process(int worker_nr, const char *process_name)
         mgx_log_stderr("fork worker %d error: %s", worker_nr, strerror(errno));
         return;
     } else if (pid == 0) {
-        g_pid = getpid();
         g_is_mgx_master = false;
         mgx_worker_process_cycle(worker_nr, process_name);
     }
@@ -109,7 +107,7 @@ void mgx_process_cycle()
     }
     mgx_move_env();
     mgx_setproctitle(title);
-    mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", title, g_pid);
+    mgx_log(MGX_LOG_NOTICE, "%s %P is running ...", title, getpid);
 
     Mgx_conf *mgx_conf = Mgx_conf::get_instance();
     int nums_worker = mgx_conf->get_int(CONFIG_WorkerProcesses, 1);
