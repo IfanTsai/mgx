@@ -2,6 +2,7 @@
 #define __MGX_THREAD_H__
 
 #include <functional>
+#include <string>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/types.h>
