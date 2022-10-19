@@ -292,6 +292,7 @@ void Mgx_socket::send_msg(char *send_buf)
 void Mgx_socket::send_msg_th_func()
 {
     int err;
+    ssize_t send_size;
     pmgx_msg_hdr_t pmsg_hdr = nullptr;
 #ifndef USE_HTTP
     pmgx_pkg_hdr_t ppkg_hdr = nullptr;
@@ -315,14 +316,16 @@ void Mgx_socket::send_msg_th_func()
 
                 if (pconn->m_cur_seq != pmsg_hdr->cur_seq) {
                     m_send_list_cnt--;
-                    it = m_send_list.erase(it);     /* erase can it = it + 1 */
                     delete[] (*it);
-                    continue;
+                    it = m_send_list.erase(it);     /* erase can it = it + 1 */
+
+                    goto mutex_unlock;
                 }
 
                 if (pconn->throw_send_cnt > 0) {
                     it++;
-                    continue;
+
+                    goto mutex_unlock;
                 }
 
                 pconn->psend_buf = (*it) + m_msg_hdr_size;
@@ -338,7 +341,7 @@ void Mgx_socket::send_msg_th_func()
                 it = m_send_list.erase(it);     /* erase can it = it + 1 */
                 m_send_list_cnt--;
 
-                ssize_t send_size = send_uninterrupt(pconn, pconn->psend_buf, pconn->rest_send_size);
+                send_size = send_uninterrupt(pconn, pconn->psend_buf, pconn->rest_send_size);
 
                 if (send_size > 0) {
                     if (send_size == pconn->rest_send_size) {
@@ -371,6 +374,7 @@ void Mgx_socket::send_msg_th_func()
                     pconn->psend_mem_addr = nullptr;
                 }
 
+mutex_unlock:
                 err = pthread_mutex_unlock(&m_send_queue_mutex);
                 if (err != 0)
                     mgx_log(MGX_LOG_STDERR, "pthread_mutex_unlock error: %s", strerror(err));
