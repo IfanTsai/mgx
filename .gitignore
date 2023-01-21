@@ -48,3 +48,4 @@ core
 # End of https://www.gitignore.io/api/c++
 .ccls-cache
 compile_commands.json
+.cache

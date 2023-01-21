@@ -118,7 +118,7 @@ void mgx_log(int level, const char *fmt, ...)
 
     if (MGX_LOG_STDERR == level || g_mgx_log.debug_mode) {
         *(--p) = '\0';
-        mgx_log_stderr((char *)log_str_buf);
+        mgx_log_stderr(reinterpret_cast<char *>(log_str_buf));
     }
 }
 
