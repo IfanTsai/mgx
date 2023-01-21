@@ -1,7 +1,7 @@
 #include "mgx_printf.h"
 #include "mgx_string.h"
 
-static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
+static u_char *mgx_sprintf_num(u_char *buf, const u_char *last, uint64_t ui64,
                                u_char zero, uintptr_t hexadecimal,
                                uintptr_t width)
 {
@@ -11,8 +11,8 @@ static u_char *mgx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64,
      * but icc issues the warning
      */
     size_t len;
-    static u_char hex[] = "0123456789abcdef";
-    static u_char HEX[] = "0123456789ABCDEF";
+    static const u_char hex[] = "0123456789abcdef";
+    static const u_char HEX[] = "0123456789ABCDEF";
 
     p = temp + MGX_INT64_LEN;
 

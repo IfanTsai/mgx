@@ -1,9 +1,10 @@
+#include "mgx_conf.h"
+#include "mgx_cosocket.h"
+
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <cstdlib>
 #include <cmath>
-#include "mgx_conf.h"
-#include "mgx_cosocket.h"
 
 #define PORT 8081
 
@@ -14,7 +15,7 @@ struct ser_cli_pair {
 
 void server_reader(void *arg)
 {
-    ser_cli_pair *pair = arg;
+    ser_cli_pair *pair = reinterpret_cast<ser_cli_pair *>(arg);
     Mgx_cosocket *sock = pair->ser_sock;
     int fd = pair->cli_fd;
     delete pair;
@@ -55,12 +56,12 @@ void server(void *arg)
         MGX_ASSERT(fd > 0, strerror(errno));
         pair->ser_sock = sock;
         pair->cli_fd = fd;
-        new Mgx_coroutine(server_reader, (void *)pair);
+        new Mgx_coroutine(server_reader, reinterpret_cast<void *>(pair));
 
         conn_cnt++;
         if (1000 == conn_cnt) {
             long t2 = sch->get_now_ms();
-            printf("%d: t2 - t1 = %ldms\n", gettid(), t2 - t1);
+            printf("%ld: t2 - t1 = %ldms\n", syscall(SYS_gettid), t2 - t1);
             conn_cnt = 0;
             t1 = sch->get_now_ms();
         }

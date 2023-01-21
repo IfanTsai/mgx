@@ -15,7 +15,7 @@ int g_pid = getpid();
         Mgx_coroutine_scheduler *sch = Mgx_coroutine_scheduler::get_instance(); \
         Mgx_coroutine *co = sch->get_current_coroutine(); \
         for (;;) { \
-            char *str = (char *)arg; \
+            char *str = static_cast<char *>(arg); \
             printf("======> co%d: %s\n", NUM, str);\
             /*co->yield();*/  \
             long t1 = sch->get_now_ms(); \
@@ -41,17 +41,17 @@ int main(int argc, char *argv[])
     mgx_log_init();
 
 #ifdef USE_COROUTINE_SCHEDULER
-    new Mgx_coroutine(func1, (void *)"1111");
-    new Mgx_coroutine(func2, (void *)"2222");
-    new Mgx_coroutine(func3, (void *)"3333");
-    new Mgx_coroutine(func4, (void *)"4444");
-    new Mgx_coroutine(func5, (void *)"5555");
+    new Mgx_coroutine(func1, const_cast<char *>("1111"));
+    new Mgx_coroutine(func2, const_cast<char *>("2222"));
+    new Mgx_coroutine(func3, const_cast<char *>("3333"));
+    new Mgx_coroutine(func4, const_cast<char *>("4444"));
+    new Mgx_coroutine(func5, const_cast<char *>("5555"));
 #else
-    Mgx_coroutine *co1 = new Mgx_coroutine(func1, (void *)"1111");
-    Mgx_coroutine *co2 = new Mgx_coroutine(func2, (void *)"2222");
-    Mgx_coroutine *co3 = new Mgx_coroutine(func3, (void *)"3333");
-    Mgx_coroutine *co4 = new Mgx_coroutine(func4, (void *)"4444");
-    Mgx_coroutine *co5 = new Mgx_coroutine(func5, (void *)"5555");
+    Mgx_coroutine *co1 = new Mgx_coroutine(func1, const_cast<char *>("1111"));
+    Mgx_coroutine *co2 = new Mgx_coroutine(func2, const_cast<char *>("2222"));
+    Mgx_coroutine *co3 = new Mgx_coroutine(func3, const_cast<char *>("3333"));
+    Mgx_coroutine *co4 = new Mgx_coroutine(func4, const_cast<char *>("4444"));
+    Mgx_coroutine *co5 = new Mgx_coroutine(func5, const_cast<char *>("5555"));
 #endif
 
     for (;;) {

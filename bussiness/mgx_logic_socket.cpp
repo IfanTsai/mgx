@@ -50,7 +50,7 @@ void Mgx_logic_socket::th_msg_process_func(char *buf)
         }
     } else {
         ppkg_body = buf + m_msg_hdr_size + m_pkg_hdr_size;
-        unsigned int crc32 = Mgx_crc32::get_instance()->get_crc32((unsigned char *)ppkg_body, pkg_size - m_pkg_hdr_size);
+        unsigned int crc32 = Mgx_crc32::get_instance()->get_crc32(static_cast<unsigned char *>(ppkg_body), pkg_size - m_pkg_hdr_size);
         if (crc32 != ppkg_hdr->crc32) {
             mgx_log(MGX_LOG_STDERR, "crc32 error, just discard");
             return;
@@ -74,7 +74,7 @@ void Mgx_logic_socket::th_msg_process_func(char *buf)
         return;
     }
     mgx_log(MGX_LOG_DEBUG, "pkg_type = %d", pkg_type);
-    (this->*pkg_handlers[pkg_type])(pmsg_hdr, (char *)ppkg_body, pkg_size - m_pkg_hdr_size);
+    (this->*pkg_handlers[pkg_type])(pmsg_hdr, static_cast<char *>(ppkg_body), pkg_size - m_pkg_hdr_size);
 }
 
 void Mgx_logic_socket::send_msg_with_nobody(pmgx_msg_hdr_t pmsg_hdr, unsigned short pkg_type)
@@ -95,7 +95,7 @@ bool Mgx_logic_socket::ping_handler(pmgx_msg_hdr_t pmsg_hdr,
         return false;
 
     pmgx_conn_t pconn = pmsg_hdr->pconn;
-    Mgx_mutex(&pconn->m_mutex);
+    Mgx_mutex mutex(&pconn->m_mutex);
     pconn->last_ping_time = time(nullptr);   /* update heart time */
     /* send heartbeat to client */
     send_msg_with_nobody(pmsg_hdr, static_cast<unsigned short>(PKG_TYPE::PING));
@@ -111,7 +111,7 @@ bool Mgx_logic_socket::register_handler(pmgx_msg_hdr_t pmsg_hdr,
     mgx_log(MGX_LOG_DEBUG, "register_handler called succeed, msg: %s", pkg_body);
 
     pmgx_conn_t pconn = pmsg_hdr->pconn;
-    Mgx_mutex(&pconn->m_mutex);
+    Mgx_mutex mutex(&pconn->m_mutex);
 
     // ...
 
@@ -122,9 +122,9 @@ bool Mgx_logic_socket::register_handler(pmgx_msg_hdr_t pmsg_hdr,
     pmgx_pkg_hdr_t psend_pkg_hdr = (pmgx_pkg_hdr_t)(psend_buf + m_msg_hdr_size);
     psend_pkg_hdr->pkg_type = static_cast<unsigned short>(PKG_TYPE::REGISTER);
     psend_pkg_hdr->pkg_size = m_pkg_hdr_size + sizeof(send_pkg_body);
-    psend_pkg_hdr->crc32 =  Mgx_crc32::get_instance()->get_crc32((unsigned char *)send_pkg_body, sizeof(send_pkg_body));
+    psend_pkg_hdr->crc32 =  Mgx_crc32::get_instance()->get_crc32(reinterpret_cast<unsigned char *>(send_pkg_body), sizeof(send_pkg_body));
 
-    memcpy((char *)psend_pkg_hdr + m_pkg_hdr_size, send_pkg_body, sizeof(send_pkg_body));
+    memcpy(reinterpret_cast<char *>(psend_pkg_hdr) + m_pkg_hdr_size, send_pkg_body, sizeof(send_pkg_body));
 
     send_msg(psend_buf);
     //send(pconn->fd, psend_pkg_hdr, psend_pkg_hdr->pkg_size, 0);

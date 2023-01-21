@@ -1,5 +1,6 @@
 #include "mgx_util.h"
 #include "mgx_log.h"
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -7,7 +8,7 @@
 
 static void mgx_backtrace(std::vector<std::string> &bt, int size, int skip)
 {
-    void **buf = (void **)malloc(sizeof(void *) *size);
+    void **buf = static_cast<void **>(malloc(sizeof(void *) *size));
     size_t nptrs = backtrace(buf, size);
 
     char **strs = backtrace_symbols(buf, nptrs);

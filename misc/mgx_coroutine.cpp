@@ -11,16 +11,16 @@ Mgx_coroutine::Mgx_coroutine(co_func_t func, void *arg)
     int ret = posix_memalign(&m_stack, getpagesize(), m_stack_size);
     MGX_ASSERT(ret == 0, "posix_memalign error");
 
-    void **stack = (void **)(m_stack + m_stack_size);
+    void **stack = reinterpret_cast<void **>(static_cast<char *>(m_stack) + m_stack_size);
     stack[-1] = nullptr;
 
     m_ctx = new mgx_ctx_t;
 #ifdef __x86_64__
     m_ctx->rsp = static_cast<char *>(static_cast<void *>(stack)) - (sizeof(char *) * 2);
-    m_ctx->rip = (void *) _exec;
+    m_ctx->rip = reinterpret_cast<void *>(_exec);
 #elif __aarch64__
-    m_ctx->sp = static_cast<char *>(stack) - (sizeof(char *) * 2);
-    m_ctx->x30 = (void *) _exec;
+    m_ctx->sp = static_cast<char *>(static_cast<void *>(stack)) - (sizeof(char *) * 2);
+    m_ctx->x30 = reinterpret_cast<void *>(_exec);
 #else
     #error "Not implement in this architecure yet !"
 #endif
@@ -72,7 +72,7 @@ void Mgx_coroutine::_switch(mgx_ctx_t *cur_ctx, mgx_ctx_t *new_ctx)
     "       movq 40(%rdx), %r13         \n"    // restore rbx, r12 - r15
     "       movq 32(%rdx), %r12         \n"
     "       movq 24(%rdx), %rbx         \n"
-    "       movq 8(%rdx), %rbp          \n"    // restore frame pointer 
+    "       movq 8(%rdx), %rbp          \n"    // restore frame pointer
     "       movq 0(%rdx), %rsp          \n"    // restore stack pointer
     "       movq 16(%rdx), %rax         \n"    // restore pc pointer
     "       movq %rax, (%rsp)           \n"    // push pc pointer in stack
@@ -133,7 +133,7 @@ void Mgx_coroutine::msleep(int ms)
     long sleep_ms = now_ms + ms;
     m_status = COROUTINE_STATUS::SLEEPING;
     m_scheduler->insert_sleep_rbtree(sleep_ms, this);
-    _switch(m_ctx, m_scheduler->get_ctx()); 
+    _switch(m_ctx, m_scheduler->get_ctx());
     m_scheduler->remove_first_sleep_rbtree();
 }
 
@@ -146,7 +146,7 @@ void Mgx_coroutine::set_wait_fd(int fd)
     m_wait_fd = fd;
 }
 
-int Mgx_coroutine::get_wait_fd() 
+int Mgx_coroutine::get_wait_fd()
 {
     return m_wait_fd;
 }
