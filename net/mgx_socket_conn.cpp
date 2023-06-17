@@ -101,6 +101,7 @@ void Mgx_socket::conn_pool_destroy()
 
 void Mgx_socket::free_conn(pmgx_conn_t c)
 {
+    epoll_oper_event(c->fd, EPOLL_CTL_DEL, EPOLLIN, EPOLL_ES_MOD_ACTION::REMOVE, nullptr);
     Mgx_mutex mutex(&m_conn_mutex);
 
     c->put_one_to_free();

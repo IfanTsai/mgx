@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
@@ -97,6 +98,7 @@ ssize_t Mgx_socket::recv_process(pmgx_conn_t c, char *buf, ssize_t buf_size)
         } else {
             mgx_log(MGX_LOG_STDERR, "recv error: %s", strerror(errno));
         }
+
         close_conn(c);
         return -1;
     }
@@ -158,7 +160,7 @@ void Mgx_socket::th_msg_process_func(char *buf)
 
 void Mgx_socket::send_msg_handler(pmgx_conn_t c)
 {
-    ssize_t send_size = send_uninterrupt(c, c->psend_mem_addr, c->rest_send_size);
+    ssize_t send_size = send_uninterrupt(c, c->psend_buf, c->rest_send_size);
     if (send_size > 0) {
         if (send_size == c->rest_send_size) {
             if (!epoll_oper_event(c->fd, EPOLL_CTL_MOD, EPOLLOUT,
